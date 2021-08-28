@@ -127,6 +127,13 @@ def try_import_jit_utils_core(silent=None):
         os.environ["log_silent"] = prev
 
 def run_cmd(cmd, cwd=None, err_msg=None, print_error=True):
+    n = len(cmd)
+    dp = DelayProgress(msg, n)
+    cmds = [ [cmd, cache_path, jittor_path] for cmd in cmds ]
+    for i,cmd in enumerate(cmds):
+        do_compile(cmd)
+        dp.update(i)  
+    return  
     LOG.v(f"Run cmd: {cmd}")
     if cwd:
         r = sp.run(cmd, cwd=cwd, shell=True, stdout=sp.PIPE, stderr=sp.STDOUT)
