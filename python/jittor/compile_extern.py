@@ -71,8 +71,8 @@ def setup_mkl():
     # except:
     #     torch = None
 
-    mkl_include_path = os.environ.get("mkl_include_path")
-    mkl_lib_path = os.environ.get("mkl_lib_path")
+    mkl_include_path = '/data/data/com.example.mjittor/termux/odnn/include'
+    mkl_lib_path = '/data/data/com.example.mjittor/termux/odnn/lib'
     
     if platform.system() == 'Linux':
         if mkl_lib_path is None or mkl_include_path is None:
