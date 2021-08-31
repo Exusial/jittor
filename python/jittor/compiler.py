@@ -798,7 +798,7 @@ def check_cache_compile():
     ]
     global jit_utils_core_files
     jit_utils_core_files = files
-    recompile = compile(cc_path, cc_flags+f" {opt_flags} -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9", files, 'jit_utils_core'+extension_suffix, True)
+    recompile = compile(cc_path, cc_flags+f" {opt_flags} -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1", files, 'jit_utils_core'+extension_suffix, True)
     if recompile and jit_utils.cc:
         LOG.e("jit_utils updated, please restart jittor.")
         sys.exit(0)
@@ -807,7 +807,7 @@ def check_cache_compile():
             jit_utils.try_import_jit_utils_core()
         assert jit_utils.cc
         # recompile, generate cache key
-        compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.mjittor/termux/lib -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 ", files, 'jit_utils_core'+extension_suffix, True)
+        compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.mjittor/termux/lib -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 ", files, 'jit_utils_core'+extension_suffix, True)
 
 def env_or_try_find(name, bname):
     if name in os.environ:
@@ -1112,7 +1112,7 @@ if use_data_gz:
     files.append(data_o_path)
     files = [f for f in files if "__data__" not in f]
 
-compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ ', files, 'jittor_core'+extension_suffix)
+compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ ', files, 'jittor_core'+extension_suffix)
 
 # TODO: move to compile_extern.py
 # compile_extern()

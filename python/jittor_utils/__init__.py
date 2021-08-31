@@ -128,8 +128,9 @@ def try_import_jit_utils_core(silent=None):
 
 def run_cmd(cmd, cwd=None, err_msg=None, print_error=True):
     n = len(cmd)
-    dp = DelayProgress(msg, n)
-    cmds = [ [cmd, cache_path, jittor_path] for cmd in cmds ]
+    dp = DelayProgress("run_cmds", n)
+    cache_path = "/home/penghy/.cache/jittor/default/clang"
+    cmds = [ [cm, cache_path, jittor_path] for cm in cmd ]
     for i,cmd in enumerate(cmds):
         do_compile(cmd)
         dp.update(i)  
