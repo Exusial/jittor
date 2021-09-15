@@ -593,7 +593,7 @@ def compile_custom_ops(
     filenames, 
     extra_flags="", 
     return_module=False,
-    dlopen_flags=os.RTLD_GLOBAL | os.RTLD_NOW | os.RTLD_DEEPBIND,
+    dlopen_flags=os.RTLD_GLOBAL | os.RTLD_NOW,
     gen_name_ = ""):
     """Compile custom ops
     filenames: path of op source files, filenames must be
@@ -674,7 +674,7 @@ def compile_custom_ops(
 
     LOG.vvv(f"Build custum ops lib:{gen_lib}")
     LOG.vvvv(f"Build sources:{builds}")
-    compile(cc_path, extra_flags+cc_flags+opt_flags+includes, builds, gen_lib)
+    compile(cc_path, extra_flags+cc_flags+opt_flags+includes+" -L/data/data/com.example.mjittor/.cache/jittor/default/clang -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1", builds, gen_lib)
 
     # add python path and import
     LOG.vvv(f"Import custum ops lib:{gen_lib}")
@@ -791,7 +791,7 @@ def check_cache_compile():
     ]
     global jit_utils_core_files
     jit_utils_core_files = files
-    recompile = compile(cc_path, cc_flags+f" {opt_flags} ", files, 'jit_utils_core'+extension_suffix, True)
+    recompile = compile(cc_path, cc_flags+f" {opt_flags} -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 ", files, 'jit_utils_core'+extension_suffix, True)
     if recompile and jit_utils.cc:
         LOG.e("jit_utils updated, please restart jittor.")
         sys.exit(0)
@@ -800,7 +800,7 @@ def check_cache_compile():
             jit_utils.try_import_jit_utils_core()
         assert jit_utils.cc
         # recompile, generate cache key
-        compile(cc_path, cc_flags+f" {opt_flags} ", files, 'jit_utils_core'+extension_suffix, True)
+        compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.mjittor/termux/lib -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 ", files, 'jit_utils_core'+extension_suffix, True)
 
 def env_or_try_find(name, bname):
     if name in os.environ:
@@ -842,11 +842,11 @@ def check_debug_flags():
 
 cc_flags = " "
 # os.RTLD_NOW | os.RTLD_GLOBAL cause segfault when import torch first
-import_flags = os.RTLD_NOW | os.RTLD_GLOBAL | os.RTLD_DEEPBIND
+import_flags = os.RTLD_NOW | os.RTLD_GLOBAL
 # if cc_type=="icc":
 #     # weird link problem, icc omp library may conflict and cause segfault
 #     import_flags = os.RTLD_NOW | os.RTLD_GLOBAL
-dlopen_flags = os.RTLD_NOW | os.RTLD_GLOBAL | os.RTLD_DEEPBIND
+dlopen_flags = os.RTLD_NOW | os.RTLD_GLOBAL
 
 with jit_utils.import_scope(import_flags):
     jit_utils.try_import_jit_utils_core()
@@ -894,7 +894,7 @@ gdb_path = try_find_exe('gdb')
 addr2line_path = try_find_exe('addr2line')
 has_pybt = check_pybt(gdb_path, python_path)
 
-cc_flags += " -Wall -Werror -Wno-unknown-pragmas -std=c++14 -fPIC -march=native "
+cc_flags += " -Wall -Wno-unknown-pragmas -std=c++14 -fPIC "
 cc_flags += " -fdiagnostics-color=always "
 if "cc_flags" in os.environ:
     cc_flags += os.environ["cc_flags"] + ' '
@@ -915,7 +915,7 @@ if os.environ.get("enable_lto") == "1":
     else:
         lto_flags = " -flto "
 
-py_include = run_cmd(py3_config_path+" --includes")
+py_include = run_cmd(py3_config_path+" --includes") + " -I/data/data/com.example.mjittor/termux/include -I/data/data/com.example.mjittor/termux/include/c++/v1"
 LOG.i(f"py_include: {py_include}")
 extension_suffix = run_cmd(py3_config_path+" --extension-suffix")
 LOG.i(f"extension_suffix: {extension_suffix}")
@@ -1010,9 +1010,10 @@ LOG.vv("compile order:", files)
 #     os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 libname = {"clang":"omp", "icc":"iomp5", "g++":"gomp"}[cc_type]
 libname = ctypes.util.find_library(libname)
-assert libname is not None, "openmp library not found"
+# assert libname is not None, "openmp library not found"
 ctypes.CDLL(libname, os.RTLD_NOW | os.RTLD_GLOBAL)
 
+'''
 # get os release
 with open("/etc/os-release", "r", encoding='utf8') as f:
     s = f.read().splitlines()
@@ -1048,8 +1049,8 @@ if os.path.isfile(version_file) and not os.path.isdir(os.path.join(jittor_path, 
     url = os.path.join("https://cg.cs.tsinghua.edu.cn/jittor/assets/build/"+key)
     jit_utils.download(url, extra_obj)
     files.append(extra_obj)
-
-compile(cc_path, cc_flags+opt_flags, files, 'jittor_core'+extension_suffix)
+'''
+compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ ', files, 'jittor_core'+extension_suffix)
 
 # TODO: move to compile_extern.py
 # compile_extern()

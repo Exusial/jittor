@@ -38,14 +38,14 @@ class TestResnet(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         # hyper-parameters
-        self.batch_size = int(os.environ.get("TEST_BATCH_SIZE", "100"))
+        self.batch_size = int(os.environ.get("TEST_BATCH_SIZE", "32"))
         self.weight_decay = 0.0001
         self.momentum = 0.9
         self.learning_rate = 0.1
         # mnist dataset
         self.train_loader = MNIST(train=True, transform=trans.Resize(224)) \
             .set_attrs(batch_size=self.batch_size, shuffle=True)
-        self.train_loader.num_workers = 4
+        self.train_loader.num_workers = 0
 
     # setup random seed
     def setup_seed(self, seed):
@@ -53,8 +53,8 @@ class TestResnet(unittest.TestCase):
         random.seed(seed)
         jt.seed(seed)
 
-    @unittest.skipIf(not jt.has_cuda, "Cuda not found")
-    @jt.flag_scope(use_cuda=1, use_stat_allocator=1)
+    # @unittest.skipIf(not jt.has_cuda, "Cuda not found")
+    @jt.flag_scope(use_cuda=0, use_stat_allocator=1)
     def test_resnet(self):
         self.setup_seed(1)
         loss_list=[]

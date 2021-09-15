@@ -9,7 +9,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <sys/prctl.h>
-#include <execinfo.h>
+// #include <execinfo.h>
 #include <iostream>
 #include "utils/tracer.h"
 
@@ -122,6 +122,7 @@ void print_trace() {
             waitpid(child_pid,NULL,0);
         }
     } else {
+        /*
         void *trace[16];
         char **messages = (char **)NULL;
         int i, trace_size = 0;
@@ -147,7 +148,9 @@ void print_trace() {
             // printf("run '%s'\n", syscom);
             int ret = system(syscom);
             (void)ret;
+            
         }
+        */
     }
 }
 
