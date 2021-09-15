@@ -28,9 +28,9 @@ def install_mkl(root_folder):
         if platform.machine()=='x86_64':
             filename = "dnnl_lnx_2.2.0_cpu_gomp.tgz"
             md5 = "35bbbdf550a9d8ad54db798e372000f6"
-        elif platform.machine()=='aarch64':
+        elif platform.machine() in ('aarch64', 'armv8l'):
             filename = "dnnl_lnx_2.2.0_cpu_gomp_aarch64.tgz"
-            md5 = "72cf9b0b8fd6c3c786d35a9daaee22b8"
+            md5 = "baed8bb96b2bbb3123f94d53cc46c69c"
         else:
             raise RuntimeError(f"platform.machine()=={platform.machine()} not support yet,"
             " Please contact us on https://github.com/jittor/jittor ")
@@ -71,16 +71,17 @@ def setup_mkl():
     except:
         torch = None
 
-    mkl_include_path = os.environ.get("mkl_include_path")
-    mkl_lib_path = os.environ.get("mkl_lib_path")
-    
+    # mkl_include_path = os.environ.get("mkl_include_path")
+    # mkl_lib_path = os.environ.get("mkl_lib_path")
+    mkl_include_path = '/data/data/com.example.mjittor/termux/odnn/include'
+    mkl_lib_path = '/data/data/com.example.mjittor/termux/odnn/lib'
     if mkl_lib_path is None or mkl_include_path is None:
         mkl_install_sh = os.path.join(jittor_path, "script", "install_mkl.sh")
         LOG.v("setup mkl...")
         # mkl_path = os.path.join(cache_path, "mkl")
         # mkl_path decouple with cc_path
         from pathlib import Path
-        mkl_path = os.path.join(str(Path.home()), ".cache", "jittor", "mkl")
+        mkl_path = os.path.join("/data/data/com.example.mjittor", ".cache", "jittor", "mkl")
         
         make_cache_dir(mkl_path)
         install_mkl(mkl_path)
@@ -106,7 +107,7 @@ def setup_mkl():
     mkl_op_dir = os.path.join(jittor_path, "extern", "mkl", "ops")
     mkl_op_files = [os.path.join(mkl_op_dir, name) for name in os.listdir(mkl_op_dir)]
     mkl_ops = compile_custom_ops(mkl_op_files, 
-        extra_flags=f" -I'{mkl_include_path}' -L'{mkl_lib_path}' -lmkldnn -Wl,-rpath='{mkl_lib_path}' ")
+        extra_flags=f" -L/data/data/com.example.mjittor/.cache/jittor/default/clang -lpython3.9 -ljit_utils_core -ljittor_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -I'{mkl_include_path}' -L'{mkl_lib_path}' -lmkldnn -Wl,-rpath='{mkl_lib_path}' ")
     LOG.vv("Get mkl_ops: "+str(dir(mkl_ops)))
 
 

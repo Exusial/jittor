@@ -63,7 +63,7 @@ extern "C" void flush_log();
 extern "C" void log_capture_start();
 extern "C" void log_capture_stop();
 extern std::vector<std::map<string,string>> log_capture_read();
-extern string thread_local thread_name;
+extern string thread_name;
 
 struct Log {
     std::ostringstream out;

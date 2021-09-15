@@ -88,7 +88,7 @@ void print_prefix(std::ostream* out) {
     
     auto usecs = tv.tv_usec;
     
-    thread_local uint32_t tid = get_tid()%100;
+    uint32_t tid = get_tid()%100;
     
     #define PRINT_W2(x) \
         char('0'+(x)/10%10) << char('0'+(x)%10)
@@ -183,9 +183,9 @@ std::vector<std::map<string,string>> log_capture_read() {
 void log_exiting();
 
 bool exited = false;
-size_t thread_local protected_page = 0;
+size_t protected_page = 0;
 int segfault_happen = 0;
-string thread_local thread_name;
+string thread_name;
 static int _pid = getpid();
 
 void segfault_sigaction(int signal, siginfo_t *si, void *arg) {

@@ -1242,3 +1242,11 @@ jt.Var.roll = roll
 def safe_log(x):
     return jt.safe_clip(x, 1e-30, 1e30).log()
 jt.Var.safe_log = safe_log
+
+
+def pass_to_c(x, sopath):
+    shape = x.shape()
+    size = len(shape)
+    from ctypes import cdll
+    cdll.LoadLibrary(sopath)
+    sopath.get_array(x)

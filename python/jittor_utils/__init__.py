@@ -116,6 +116,7 @@ def try_import_jit_utils_core(silent=None):
         if is_in_ipynb:
             cc.ostream_redirect(True, True)
     except Exception as _:
+        print(_)
         pass
     if not (silent is None):
         os.environ["log_silent"] = prev
@@ -159,6 +160,13 @@ def pool_initializer():
     cc.init_subprocess()
 
 def run_cmds(cmds, cache_path, jittor_path, msg="run_cmds"):
+    n = len(cmds)
+    dp = DelayProgress(msg, n)
+    cmds = [ [cmd, cache_path, jittor_path] for cmd in cmds ]
+    for i,cmd in enumerate(cmds):
+        do_compile(cmd)
+        dp.update(i)  
+    return  
     global pool_size, p
     bk = mp.current_process()._config.get('daemon')
     mp.current_process()._config['daemon'] = False
@@ -192,6 +200,8 @@ def download(url, filename):
 def find_cache_path():
     from pathlib import Path
     path = str(Path.home())
+    print(path)
+    path = "/data/data/com.example.mjittor"
     dirs = [".cache", "jittor", os.path.basename(cc_path)]
     if os.environ.get("debug")=="1":
         dirs[-1] += "_debug"
@@ -223,6 +233,7 @@ def find_cache_path():
                 os.mkdir(path)
             except:
                 pass
+        print(path)
         assert os.path.isdir(path)
     if path not in sys.path:
         sys.path.append(path)
@@ -280,7 +291,7 @@ is_in_ipynb = in_ipynb()
 cc = None
 LOG = LogWarper()
 
-cc_path = env_or_find('cc_path', 'g++', silent=True)
+cc_path = env_or_find('cc_path', './g++', silent=True)
 os.environ["cc_path"] = cc_path
 cc_type = get_cc_type(cc_path)
 cache_path = find_cache_path()

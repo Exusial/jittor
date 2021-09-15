@@ -14,7 +14,8 @@ AlignedAllocator aligned_allocator;
 const char* AlignedAllocator::name() const {return "aligned";}
 
 void* AlignedAllocator::alloc(size_t size, size_t& allocation) {
-    return aligned_alloc(alignment, size);
+    return malloc(size);
+    // return aligned_alloc(alignment, size);
 }
 
 void AlignedAllocator::free(void* mem_ptr, size_t size, const size_t& allocation) {

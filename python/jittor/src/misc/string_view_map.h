@@ -5,12 +5,11 @@
 // file 'LICENSE.txt', which is part of this source code package.
 // ***************************************************************
 #pragma once
-#include <experimental/string_view>
+#include <string_view>
 #include "common.h"
-
 namespace jittor {
 
-using std::experimental::string_view;
+using std::string_view;
 
 template<class T>
 struct string_view_map {
