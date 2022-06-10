@@ -153,7 +153,10 @@ def run_cmd(cmd, cwd=None, err_msg=None, print_error=True):
 def do_compile(args):
     cmd, cache_path, jittor_path = args
     if os.environ.get("is_mobile", "0") == "1":
-        cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cmd
+        if os.environ.get("use_c", "0") == "0":
+            cmd = "cd /data/data/com.example.myapplication/.cache/jittor/default/clang && " + cmd
+        else:
+            cmd = "cd /data/data/com.example.myapplication/c_ver/.cache/jittor/default/clang && " + cmd
     try_import_jit_utils_core(True)
     if cc:
         return cc.cache_compile(cmd, cache_path, jittor_path)
@@ -242,7 +245,9 @@ def download(url, filename):
 def find_cache_path():
     from pathlib import Path
     if os.environ.get("is_mobile", "0") == "1":
-        path = "/data/data/com.example.mjittor"
+        path = "/data/data/com.example.myapplication"
+        if os.environ.get("use_c", "0") == "1":
+            path = "/data/data/com.example.myapplication/c_ver"
     else:
         path = str(Path.home())
     dirs = [".cache", "jittor", os.path.basename(cc_path)]

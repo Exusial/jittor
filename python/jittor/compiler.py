@@ -18,6 +18,10 @@ import platform
 from ctypes import cdll
 from ctypes.util import find_library
 
+import ctypes
+if os.environ.get("is_mobile", "0") == "0":
+    ctypes.CDLL("/usr/local/cuda/targets/x86_64-linux/lib/libOpenCL.so", os.RTLD_NOW | os.RTLD_GLOBAL)
+
 import jittor_utils as jit_utils
 from jittor_utils import LOG, run_cmd, cache_path, find_exe, cc_path, cc_type, cache_path
 from . import pyjt_compiler
@@ -48,7 +52,10 @@ def remove_flags(flags, rm_flags):
 def compile(compiler, flags, inputs, output, combind_build=False):
     def do_compile(cmd):
         if os.environ.get("is_mobile", "0") == "1":
-            cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cmd
+            if os.environ.get("use_c", "0") == "0":
+                cmd = "cd /data/data/com.example.myapplication/.cache/jittor/default/clang && " + cmd
+            else:
+                cmd = "cd /data/data/com.example.myapplication/c_ver/.cache/jittor/default/clang && " + cmd
         if jit_utils.cc:
             return jit_utils.cc.cache_compile(cmd, cache_path, jittor_path)
         else:
@@ -707,7 +714,10 @@ def compile_custom_ops(
     LOG.vvv(f"Build custum ops lib:{gen_lib}")
     LOG.vvvv(f"Build sources:{builds}")
     if os.environ.get("is_mobile", "0") == "1":
-        compile(cc_path, extra_flags+cc_flags+opt_flags+includes+" -L/data/data/com.example.mjittor/.cache/jittor/default/clang -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -Dmobile", builds, gen_lib)
+        if os.environ.get("use_c", "0") == "0":
+            compile(cc_path, extra_flags+cc_flags+opt_flags+includes+" -L/data/data/com.example.myapplication/.cache/jittor/default/clang -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -Dmobile", builds, gen_lib)
+        else:
+            compile(cc_path, extra_flags+cc_flags+opt_flags+includes+" -L/data/data/com.example.myapplication/c_ver/.cache/jittor/default/clang -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -Dmobile -Dcver", builds, gen_lib)            
     else:
         compile(cc_path, extra_flags+cc_flags+opt_flags+includes, builds, gen_lib)
 
@@ -816,6 +826,29 @@ def check_cuda():
     ctypes.CDLL(cuda_lib+"/libcudart.so", dlopen_flags)
     has_cuda = 1
 
+def find_opencl():
+    path = ""
+    name = "opencl_path"
+    if name in os.environ:
+        path = os.environ[name]
+    if path=="":
+        if os.environ.get("is_mobile", "0") == "1":
+            path = "/data/data/com.example.myapplication/termux"
+        else:
+            if os.path.exists("/usr/local/cuda/targets/x86_64-linux/include/CL"):
+                path = "/usr/local/cuda/targets/x86_64-linux"
+    else:
+        if not os.path.exists(path+"/include/CL"):
+            raise RuntimeError(f"opencl not found at: {path}")
+    return path
+
+def check_opencl():
+    global cc_flags, has_opencl, opencl_path
+    if not opencl_path or opencl_path=="":
+        return
+    cc_flags += "-I"+opencl_path+"/include -L"+opencl_path+"/lib -lOpenCL -DHAS_OPENCL"
+    has_opencl = 1
+
 def check_cache_compile():
     files = [
         "src/utils/cache_compile.cc",
@@ -829,7 +862,7 @@ def check_cache_compile():
     global jit_utils_core_files
     jit_utils_core_files = files
     if os.environ.get("is_mobile", "0") == "1":
-        recompile = compile(cc_path, cc_flags+f" {opt_flags} -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 -Dmobile", files, 'jit_utils_core'+extension_suffix, True)
+        recompile = compile(cc_path, cc_flags+f" {opt_flags} -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -lpython3.9 -Dmobile", files, 'jit_utils_core'+extension_suffix, True)
     else:
         recompile = compile(cc_path, cc_flags+f" {opt_flags} ", files, 'jit_utils_core'+extension_suffix, True)
     if recompile and jit_utils.cc:
@@ -841,7 +874,10 @@ def check_cache_compile():
         assert jit_utils.cc
         # recompile, generate cache key
         if os.environ.get("is_mobile", "0") == "1":
-            compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.mjittor/termux/lib -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 -Dmobile", files, 'jit_utils_core'+extension_suffix, True)
+            if os.environ.get("use_c", "0") == "0":
+                compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.myapplication/termux/lib -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -lpython3.9 -Dmobile", files, 'jit_utils_core'+extension_suffix, True)
+            else:
+                compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.myapplication/termux/lib -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -lpython3.9 -Dmobile -Dcver", files, 'jit_utils_core'+extension_suffix, True)
         else:
             compile(cc_path, cc_flags+f" {opt_flags} ", files, 'jit_utils_core'+extension_suffix, True)
 
@@ -935,6 +971,11 @@ if not nvcc_path:
         nvcc_path = try_find_exe(nvcc_path)
 if nvcc_path is None:
     nvcc_path = ""
+# check opencl
+opencl_path = find_opencl()
+has_opencl = 0
+check_opencl()
+
 gdb_path = env_or_try_find('gdb_path', 'gdb')
 addr2line_path = try_find_exe('addr2line')
 has_pybt = check_pybt(gdb_path, python_path)
@@ -1069,7 +1110,9 @@ make_cache_dir(ck_path)
 cc_flags += f" -I{os.path.join(jittor_path, 'src')} "
 cc_flags += py_include
 if os.environ.get("is_mobile", "0") == "1":
-    cc_flags += " -I/data/data/com.example.mjittor/termux/include -I/data/data/com.example.mjittor/termux/include/c++/v1 -Dmobile"
+    cc_flags += " -I/data/data/com.example.myapplication/termux/include -I/data/data/com.example.myapplication/termux/include/c++/v1 -Dmobile"
+    if os.environ.get("use_c", "0") == "1":
+        cc_flags += " -Dcver"
 check_cache_compile()
 LOG.v(f"Get cache_compile: {jit_utils.cc}")
 
@@ -1121,6 +1164,8 @@ files4 = [ f[len(jittor_path)+1:] for f in files4 ]
 # files4 = run_cmd('find -L src | grep '+grep_args, jittor_path).splitlines()
 at_beginning = [
     "src/ops/op_utils.cc",
+    "src/misc/opencl_flags.cc",
+    "src/misc/cuda_flags.cc",
     "src/event_queue.cc",
     "src/mem/allocator/sfrl_allocator.cc",
     "src/mem/allocator.cc",
@@ -1188,7 +1233,10 @@ if use_data_gz:
     files = [f for f in files if "__data__" not in f]
 
 if os.environ.get("is_mobile", "0") == "1":
-    compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ -Dmobile', files, 'jittor_core'+extension_suffix)
+    if os.environ.get("use_c", "0") == "0":
+        compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -L/data/data/com.example.myapplication/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.myapplication/.cache/jittor/default/clang/ -Dmobile', files, 'jittor_core'+extension_suffix)
+    else:
+        compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.myapplication/termux/lib -I/data/data/com.example.myapplication/termux/include/c++/v1 -L/data/data/com.example.myapplication/c_ver/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.myapplication/.cache/jittor/default/clang/ -Dmobile -Dcver', files, 'jittor_core'+extension_suffix)        
 else:
     compile(cc_path, cc_flags+opt_flags, files, 'jittor_core'+extension_suffix)
 
@@ -1209,6 +1257,7 @@ flags.cc_type = cc_type
 flags.cc_flags = cc_flags + link_flags + kernel_opt_flags
 flags.nvcc_path = nvcc_path
 flags.nvcc_flags = nvcc_flags
+flags.opencl_path = opencl_path
 flags.python_path = python_path
 flags.cache_path = cache_path
 flags.jittor_path = jittor_path

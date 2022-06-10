@@ -23,7 +23,10 @@ import jittor as jt
 import time
 
 if os.environ.get("is_mobile", "0") == "1":
-    dataset_root = os.path.join("/data/data/com.example.mjittor", ".cache", "jittor", "dataset")
+    if os.environ.get("use_c", "0") == "0":
+        dataset_root = os.path.join("/data/data/com.example.myapplication", ".cache", "jittor", "dataset")
+    else:
+        dataset_root = os.path.join("/data/data/com.example.myapplication", "c_ver", ".cache", "jittor", "dataset")
 else:
     dataset_root = os.path.join(pathlib.Path.home(), ".cache", "jittor", "dataset")
 mp_log_v = os.environ.get("mp_log_v", 0) 
