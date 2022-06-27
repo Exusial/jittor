@@ -196,11 +196,12 @@ void run_cmd(string cmd, string cwd="") {
 
 static string get_symbol_name(const string& jit_key) {
     int i=0;
-    while (i<jit_key.size() && jit_key[i]>=0) i++;
+    while (i<jit_key.size() && short(jit_key[i]) != 194 && short(jit_key[i]) >= 0) i++;
     string op_name = i ? jit_key.substr(0, i) : "fused";
     op_name = Op::file_name_to_class_name(op_name);
     // _ZN7jittorXyyyyyy7jit_runEv
     // jittor::yyyyyy::jit_run
+
     #ifdef _MSC_VER
     op_name = "?jit_run@"+op_name+"Op@jittor@@QEAAXXZ";
     #else

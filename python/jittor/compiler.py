@@ -679,7 +679,7 @@ def compile_custom_ops(
     """
     if dlopen_flags is None:
         dlopen_flags = os.RTLD_GLOBAL | os.RTLD_NOW
-        if platform.system() == 'Linux'  and os.environ.get("is_mobile", "0") == "0":
+        if platform.system() == 'Linux' and os.environ.get("is_mobile", "0") == "0":
             dlopen_flags |= os.RTLD_DEEPBIND
 
     srcs = {}
@@ -726,10 +726,13 @@ def compile_custom_ops(
     make_cache_dir(lib_path)
     gen_src_fname = os.path.join(lib_path, gen_name+".cc")
     gen_head_fname = os.path.join(lib_path, gen_name+".h")
-    gen_lib = os.path.join(lib_path, gen_name+extension_suffix)
+    if os.environ.get("is_mobile", "0") == "0":
+        gen_lib = os.path.join(lib_path, gen_name+extension_suffix)
+    else:
+        gen_lib = os.path.join(lib_path, "lib" + gen_name + ".so")
     libname = gen_name + lib_suffix
     op_extra_flags += f" -L\"{lib_path}\" -l\"{libname}\" "
-
+    print("liblibname ", libname)
     gen_src = gen_jit_op_maker(headers.values(), export=gen_name, extra_flags=op_extra_flags)
     pyjt_compiler.compile_single(gen_head_fname, gen_src_fname, src=gen_src)
     # gen src initialize first
@@ -1090,7 +1093,10 @@ opt_flags = ""
 py_include = jit_utils.get_py3_include_path()
 LOG.v(f"py_include: {py_include}")
 extension_suffix = jit_utils.get_py3_extension_suffix()
-lib_suffix = extension_suffix.rsplit(".", 1)[0]
+if os.environ.get("is_mobile", "0") == "0":
+    lib_suffix = extension_suffix.rsplit(".", 1)[0]
+else:
+    lib_suffix = ""
 LOG.v(f"extension_suffix: {extension_suffix}")
 so = ".so" if os.name != 'nt' else ".dll"
 
