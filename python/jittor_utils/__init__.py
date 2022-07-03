@@ -156,6 +156,8 @@ def try_import_jit_utils_core(silent=None):
         # if is in notebook, must log sync, and we redirect the log
         if is_in_ipynb: os.environ["log_sync"] = "1"
         import jit_utils_core as cc
+        if cc:
+            print("success!!")
         if is_in_ipynb:
             if os.name != 'nt':
                 # windows jupyter has import error
@@ -163,6 +165,7 @@ def try_import_jit_utils_core(silent=None):
                 # TODO: find a better way
                 cc.ostream_redirect(True, True)
     except Exception as _:
+        print(_)
         if int(os.environ.get("log_v", "0")) > 0:
             print(_)
         pass
