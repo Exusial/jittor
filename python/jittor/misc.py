@@ -1086,12 +1086,12 @@ def auto_parallel(n, src, block_num=1024, **kw):
     call_args = ",".join(call_args)
     xn = '\n'
     new_src = f"""
-#ifdef JIT_cuda
+#ifdef JIT_device
 __device__
 #endif
 {src.replace(func_name, func_name+"_inner", 1)}
 
-#ifdef JIT_cuda
+#ifdef JIT_device
 __global__ static void {func_name}_entry({entry_func_args_def}) {{
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     {tid_def}

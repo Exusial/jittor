@@ -21,6 +21,7 @@ struct NFEFAllocator : Allocator {
     const char* name() const override;
     void* alloc(size_t size, size_t& allocation) override;
     void free(void* mem_ptr, size_t size, const size_t& allocation) override;
+    bool share_with(size_t size, size_t allocation) override;
 };
 
 DECLARE_FLAG(int, use_nfef_allocator);

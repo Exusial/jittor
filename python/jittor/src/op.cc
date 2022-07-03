@@ -14,6 +14,8 @@
 #include "mem/allocator.h"
 #include "misc/cuda_flags.h"
 #include "pybind/py_var_tracer.h"
+#include "opencl_warper.h"
+#include "core.h"
 #include "executor.h"
 #include "var_holder.h"
 
@@ -157,18 +159,45 @@ void Op::do_jit_prepare(JK& jk) {
         bool use_int64_t = false;
         // TODO: fused op do not have inputs,
         //   check use_cuda_op from outputs may not be enough
-        bool use_cuda_op = use_cuda;
+        bool use_cuda_op = use_cuda || use_opencl;
         for (Var* var : inputs()) {
+            // if (var->mem_ptr) {
+            //     /* jit key don't include here, because 
+            //         parallel compiler don't known
+            //     jk << JK::key << "alloc_i" << JK::hex1(in_id)
+            //         << JK::hex1(var->allocator->flags()) << JK::end;
+            //     */
+            //     if (use_opencl)
+            //         use_cuda_op &= var->allocator->is_opencl();
+            //     else if (use_cuda)
+            //         use_cuda_op &= var->allocator->is_cuda();
+            // }
             if (var->num >= std::numeric_limits<int32_t>::max())
                 use_int64_t = true;
         }
         for (Var* var : outputs()) {
+            // if (var->mem_ptr) {
+            //     /*
+            //     jk << JK::key << "alloc_o" << JK::hex1(in_id)
+            //         << JK::hex1(var->allocator->flags()) << JK::end;
+            //     */
+            //     if (use_opencl)
+            //         use_cuda_op &= var->allocator->is_opencl();
+            //     else if (use_cuda)
+            //         use_cuda_op &= var->allocator->is_cuda();
+            // }
             if (var->num >= std::numeric_limits<int32_t>::max())
                 use_int64_t = true;
         }
         jk << "«JIT:1";
         if (use_cuda_op && flags.get(NodeFlags::_cuda)) {
-            jk << "«JIT_cuda:1";
+            // jk << _CS("[JIT_device:1]");
+            // if (use_cuda) jk << _CS("[JIT_cuda:1]");
+            // else if (use_opencl) jk << _CS("[JIT_opencl:1]");
+            // jk << "«JIT_cuda:1";
+            if (use_cuda) jk << "«JIT_cuda:1";
+            else if (use_opencl) jk << "«JIT_opencl:1";
+
             flags.set(NodeFlags::_cpu, 0);
             // TODO: 64bit index in CUDA
             // use_int64_t = false;

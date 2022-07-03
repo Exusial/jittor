@@ -18,6 +18,10 @@ import platform
 from ctypes import cdll
 from ctypes.util import find_library
 
+import ctypes
+if os.environ.get("is_mobile", "0") == "0":
+    ctypes.CDLL("/usr/local/cuda/targets/x86_64-linux/lib/libOpenCL.so", os.RTLD_NOW | os.RTLD_GLOBAL)
+
 import jittor_utils as jit_utils
 from jittor_utils import LOG, run_cmd, find_exe, cc_path, cc_type, cache_path
 from . import pyjt_compiler
@@ -85,6 +89,8 @@ def map_flags(flags, func):
 
 def compile(compiler, flags, inputs, output, combind_build=False, cuda_flags="", obj_dirname="obj_files"):
     def do_compile(cmd):
+        if os.environ.get("is_mobile", "0") == "1":
+            cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cmd
         if jit_utils.cc:
             return jit_utils.cc.cache_compile(cmd, cache_path, jittor_path)
         else:
@@ -672,7 +678,7 @@ def compile_custom_ops(
     """
     if dlopen_flags is None:
         dlopen_flags = os.RTLD_GLOBAL | os.RTLD_NOW
-        if platform.system() == 'Linux':
+        if platform.system() == 'Linux' and os.environ.get("is_mobile", "0") == "0":
             dlopen_flags |= os.RTLD_DEEPBIND
 
     srcs = {}
@@ -719,10 +725,12 @@ def compile_custom_ops(
     make_cache_dir(lib_path)
     gen_src_fname = os.path.join(lib_path, gen_name+".cc")
     gen_head_fname = os.path.join(lib_path, gen_name+".h")
-    gen_lib = os.path.join(lib_path, gen_name+extension_suffix)
+    if os.environ.get("is_mobile", "0") == "0":
+        gen_lib = os.path.join(lib_path, gen_name+extension_suffix)
+    else:
+        gen_lib = os.path.join(lib_path, "lib" + gen_name + ".so")
     libname = gen_name + lib_suffix
     op_extra_flags += f" -L\"{lib_path}\" -l\"{libname}\" "
-
     gen_src = gen_jit_op_maker(headers.values(), export=gen_name, extra_flags=op_extra_flags)
     pyjt_compiler.compile_single(gen_head_fname, gen_src_fname, src=gen_src)
     # gen src initialize first
@@ -747,10 +755,16 @@ def compile_custom_ops(
 
     with open(gen_head_fname, "w", encoding='utf8') as f:
         f.write(gen_src)
-
     LOG.vvv(f"Build custum ops lib:{gen_lib}")
     LOG.vvvv(f"Build sources:{builds}")
-    compile(cc_path, extra_flags+cc_flags+opt_flags+includes, builds, gen_lib)
+    if os.environ.get("is_mobile", "0") == "1":
+        mobile_flag = "-Dmobile"
+        if os.environ.get("is_c_ver", "0") == "1":
+            mobile_flag = mobile_flag + " -DCVER"
+        compile(cc_path, extra_flags+cc_flags+opt_flags+includes+f" -L/data/data/com.example.mjittor/.cache/jittor/default/clang -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 {mobile_flag}", builds, gen_lib)
+        os.system(f"ln -s {gen_lib} /data/data/com.example.mjittor/.cache/jittor/default/clang/custom_ops/{gen_name}.so")
+    else:
+        compile(cc_path, extra_flags+cc_flags+opt_flags+includes, builds, gen_lib)
 
     # add python path and import
     LOG.vvv(f"Import custum ops lib:{gen_lib}")
@@ -867,6 +881,29 @@ def check_cuda():
         ctypes.CDLL(cuda_lib+"/libcudart.so", dlopen_flags)
     has_cuda = 1
 
+def find_opencl():
+    path = ""
+    name = "opencl_path"
+    if name in os.environ:
+        path = os.environ[name]
+    if path=="":
+        if os.environ.get("is_mobile", "0") == "1":
+            path = "/data/data/com.example.mjittor/termux"
+        else:
+            if os.path.exists("/usr/local/cuda/targets/x86_64-linux/include/CL"):
+                path = "/usr/local/cuda/targets/x86_64-linux"
+    else:
+        if not os.path.exists(path+"/include/CL"):
+            raise RuntimeError(f"opencl not found at: {path}")
+    return path
+
+def check_opencl():
+    global cc_flags, has_opencl, opencl_path
+    if not opencl_path or opencl_path=="":
+        return
+    cc_flags += "-I"+opencl_path+"/include -L"+opencl_path+"/lib -lOpenCL -DHAS_OPENCL"
+    has_opencl = 1
+
 def check_cache_compile():
     files = [
         "src/utils/cache_compile.cc",
@@ -879,7 +916,13 @@ def check_cache_compile():
         files = [ x.replace('/', '\\') for x in files ]
     global jit_utils_core_files
     jit_utils_core_files = files
-    recompile = compile(cc_path, cc_flags+f" {opt_flags} ", files, jit_utils.cache_path+'/jit_utils_core'+extension_suffix, True)
+    if os.environ.get("is_mobile", "0") == "1":
+        mobile_flag = "-Dmobile"
+        if os.environ.get("is_c_ver", "0") == "1":
+            mobile_flag = mobile_flag + " -DCVER"
+        recompile = compile(cc_path, cc_flags+f" {opt_flags} -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 {mobile_flag}", files, jit_utils.cache_path+'/jit_utils_core'+extension_suffix, True)
+    else:
+        recompile = compile(cc_path, cc_flags+f" {opt_flags} ", files, jit_utils.cache_path+'/jit_utils_core'+extension_suffix, True)
     if recompile and jit_utils.cc:
         LOG.e("jit_utils updated, please rerun your command.")
         sys.exit(0)
@@ -888,7 +931,13 @@ def check_cache_compile():
             jit_utils.try_import_jit_utils_core()
         assert jit_utils.cc
         # recompile, generate cache key
-        compile(cc_path, cc_flags+f" {opt_flags} ", files, jit_utils.cache_path+'/jit_utils_core'+extension_suffix, True)
+        if os.environ.get("is_mobile", "0") == "1":
+            mobile_flag = "-Dmobile"
+            if os.environ.get("is_c_ver", "0") == "1":
+                mobile_flag = mobile_flag + " -DCVER"
+            compile(cc_path, cc_flags+f" {opt_flags} -I/data/data/com.example.mjittor/termux/lib -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -lpython3.9 {mobile_flag}", files, jit_utils.cache_path+'/jit_utils_core'+extension_suffix, True)
+        else:
+            compile(cc_path, cc_flags+f" {opt_flags} ", files, jit_utils.cache_path+'/jit_utils_core'+extension_suffix, True)
 
 def env_or_try_find(name, bname):
     if name in os.environ:
@@ -931,13 +980,13 @@ def check_debug_flags():
 cc_flags = " "
 # os.RTLD_NOW | os.RTLD_GLOBAL cause segfault when import torch first
 import_flags = os.RTLD_NOW | os.RTLD_GLOBAL
-if platform.system() == 'Linux':
+if platform.system() == 'Linux' and os.environ.get("is_mobile", "0") == "0":
     import_flags |= os.RTLD_DEEPBIND
 # if cc_type=="icc":
 #     # weird link problem, icc omp library may conflict and cause segfault
 #     import_flags = os.RTLD_NOW | os.RTLD_GLOBAL
 dlopen_flags = os.RTLD_NOW | os.RTLD_GLOBAL
-if platform.system() == 'Linux':
+if platform.system() == 'Linux' and os.environ.get("is_mobile", "0") == "0":
     import_flags |= os.RTLD_DEEPBIND
 
 with jit_utils.import_scope(import_flags):
@@ -983,6 +1032,11 @@ if not nvcc_path:
         nvcc_path = try_find_exe(nvcc_path)
 if nvcc_path is None:
     nvcc_path = ""
+# check opencl
+opencl_path = find_opencl()
+has_opencl = 0
+check_opencl()
+
 if "nvcc_path" in os.environ:
     nvcc_path = os.environ["nvcc_path"]
 gdb_path = env_or_try_find('gdb_path', 'gdb')
@@ -1045,7 +1099,10 @@ opt_flags = ""
 py_include = jit_utils.get_py3_include_path()
 LOG.v(f"py_include: {py_include}")
 extension_suffix = jit_utils.get_py3_extension_suffix()
-lib_suffix = extension_suffix.rsplit(".", 1)[0]
+if os.environ.get("is_mobile", "0") == "0":
+    lib_suffix = extension_suffix.rsplit(".", 1)[0]
+else:
+    lib_suffix = ""
 LOG.v(f"extension_suffix: {extension_suffix}")
 so = ".so" if os.name != 'nt' else ".dll"
 
@@ -1175,6 +1232,11 @@ make_cache_dir(ck_path)
 # build cache_compile
 cc_flags += f" -I\"{os.path.join(jittor_path, 'src')}\" "
 cc_flags += py_include
+if os.environ.get("is_mobile", "0") == "1":
+    mobile_flag = "-Dmobile"
+    if os.environ.get("is_c_ver", "0") == "1":
+        mobile_flag = mobile_flag + " -DCVER"
+    cc_flags += f" -I/data/data/com.example.mjittor/termux/include -I/data/data/com.example.mjittor/termux/include/c++/v1 {mobile_flag}"
 check_cache_compile()
 LOG.v(f"Get cache_compile: {jit_utils.cc}")
 
@@ -1258,6 +1320,8 @@ files4 = [ f[len(jittor_path)+1:] for f in files4 ]
 # files4 = run_cmd('find -L src | grep '+grep_args, jittor_path).splitlines()
 at_beginning = [
     "src/ops/op_utils.cc",
+    "src/misc/opencl_flags.cc",
+    "src/misc/cuda_flags.cc",
     "src/ops/op_register.cc",
     "src/init.cc",
     "src/event_queue.cc",
@@ -1288,7 +1352,8 @@ LOG.vv("compile order:", files)
 if platform.system() == 'Linux':
     libname = {"clang":"omp", "icc":"iomp5", "g++":"gomp"}[cc_type]
     libname = ctypes.util.find_library(libname)
-    assert libname is not None, "openmp library not found"
+    if os.environ.get("is_mobile", "0") == "0":
+        assert libname is not None, "openmp library not found"
     ctypes.CDLL(libname, os.RTLD_NOW | os.RTLD_GLOBAL)
 
 if platform.machine()=='sw_64':
@@ -1326,9 +1391,17 @@ if use_data_gz:
     files.append(data_o_path)
     files = [f for f in files if "__data__" not in f]
 
-cc_flags += f" -l\"jit_utils_core{lib_suffix}\" "
-compile(cc_path, cc_flags+opt_flags, files, 'jittor_core'+extension_suffix)
-cc_flags += f" -l\"jittor_core{lib_suffix}\" "
+if os.environ.get("is_mobile", "0") == "1":
+    cc_flags += f" -l\"jit_utils_core\" "
+    mobile_flag = "-Dmobile"
+    if os.environ.get("is_c_ver", "0") == "1":
+        mobile_flag = mobile_flag + " -DCVER"
+    compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ {mobile_flag}', files, 'jittor_core'+extension_suffix)
+    cc_flags += f" -l\"jittor_core\" "
+else:
+    cc_flags += f" -l\"jit_utils_core{lib_suffix}\" "
+    compile(cc_path, cc_flags+opt_flags, files, 'jittor_core'+extension_suffix)
+    cc_flags += f" -l\"jittor_core{lib_suffix}\" "
 
 # TODO: move to compile_extern.py
 # compile_extern()
@@ -1367,6 +1440,7 @@ flags.cc_type = cc_type
 flags.cc_flags = cc_flags + kernel_opt_flags
 flags.nvcc_path = nvcc_path
 flags.nvcc_flags = nvcc_flags
+flags.opencl_path = opencl_path
 flags.python_path = python_path
 flags.cache_path = cache_path
 flags.jittor_path = jittor_path

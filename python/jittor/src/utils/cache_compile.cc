@@ -71,6 +71,15 @@ void find_names(string cmd, vector<string>& input_names, string& output_name, ma
         return s;
     };
     size_t i=0;
+    #ifdef mobile
+    if(i+2 < cmd.size() && cmd[i] == 'c' && cmd[i+1] == 'd'){
+        while(cmd[i] != '&') {
+            i++;
+            continue;
+        }
+        i = i + 3;
+    }
+    #endif
     pass(i);
     while (i<cmd.size()) {
         if (cmd[i] == ' ') {
@@ -313,11 +322,15 @@ bool cache_compile(string cmd, const string& cache_path_, const string& jittor_p
         ran = true;
     }
     if (output_cache_key.size() != 0 && output_cache_key != cache_key) {
-        LOGvv << "Cache key of" << output_name << "changed.";
+        #ifdef CVER
+        ran = false;
+        #else
+        LOGvv << "Cache key of" << output_name << " changed.";
         LOGvvv << "Run cmd:" << cmd;
         check_win_file(output_name);
         system_with_check(cmd.c_str(), tmp_dir.c_str());
         ran = true;
+        #endif
     }
     if (output_cache_key != cache_key) {
         LOGvvvv << "Prev cache key" << output_cache_key;

@@ -23,6 +23,7 @@
 #include "fused_op.h"
 #include "profiler/memory_checker.h"
 #include "misc/deleter.h"
+#include "opencl_warper.h"
 #include "executor.h"
 
 namespace jittor {
@@ -70,14 +71,14 @@ unique_ptr<MemoryChecker>* load_memory_checker(string name) {
     LOGvv << "Opening jit lib:" << name;
     #ifdef _WIN32
     void* handle = (void*)LoadLibrary(name.c_str());
-    #elif defined(__linux__)
-    void* handle = dlopen(name.c_str(), RTLD_LAZY | RTLD_DEEPBIND | RTLD_LOCAL);
+    #elif defined(__linux__) && !defined(mobile)
+    void *handle = dlopen(name.c_str(), RTLD_LAZY | RTLD_DEEPBIND | RTLD_LOCAL);
     msg = dlerror();
     #else
     void* handle = dlopen(name.c_str(), RTLD_LAZY | RTLD_LOCAL);
-    msg = dlerror();
+     msg = dlerror();
     #endif
-
+  
     CHECK(handle) << "Cannot open library" << name << ":" << msg;
     
     #ifdef _WIN32
@@ -287,6 +288,10 @@ void Profiler::record_and_run(
             if (use_cuda)
                 checkCudaErrors(cudaDeviceSynchronize());
             #endif
+            #ifdef HAS_OPENCL
+            if (use_opencl) 
+                clFinish(opencl_queue);
+            #endif
         }
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -296,6 +301,10 @@ void Profiler::record_and_run(
         #ifdef HAS_CUDA
         if (use_cuda)
             checkCudaErrors(cudaDeviceSynchronize());
+        #endif
+        #ifdef HAS_OPENCL
+        if (use_opencl)
+            clFinish(opencl_queue);
         #endif
         auto finish = std::chrono::high_resolution_clock::now();
         auto total_ns =  (int64_t)std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();

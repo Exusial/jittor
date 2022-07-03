@@ -102,9 +102,13 @@ def setup_mkl():
     # except:
     #     torch = None
 
-    mkl_include_path = os.environ.get("mkl_include_path")
-    mkl_lib_path = os.environ.get("mkl_lib_path")
-    
+    if os.environ.get("is_mobile", "0") == "1":
+            mkl_include_path = '/data/data/com.example.mjittor/termux/odnn/include'
+            mkl_lib_path = '/data/data/com.example.mjittor/termux/odnn/lib'
+    else:
+        mkl_include_path = os.environ.get("mkl_include_path")
+        mkl_lib_path = os.environ.get("mkl_lib_path")
+
     if platform.system() == 'Linux' or os.name == 'nt':
         if mkl_lib_path is None or mkl_include_path is None:
             mkl_install_sh = os.path.join(jittor_path, "script", "install_mkl.sh")
@@ -121,8 +125,9 @@ def setup_mkl():
                     mkl_home = os.path.join(mkl_path, name)
                     break
             assert mkl_home!=""
-        mkl_include_path = os.path.join(mkl_home, "include")
-        mkl_lib_path = os.path.join(mkl_home, "lib")
+        if os.environ.get("is_mobile", "0") == "0":
+            mkl_include_path = os.path.join(mkl_home, "include")
+            mkl_lib_path = os.path.join(mkl_home, "lib")
 
         mkl_lib_name = os.path.join(mkl_lib_path, "libmkldnn.so")
         extra_flags = f" -I\"{mkl_include_path}\" -L\"{mkl_lib_path}\" -lmkldnn "
@@ -139,6 +144,9 @@ def setup_mkl():
         # We do not link manualy, link in custom ops
         # ctypes.CDLL(mkl_lib_name, dlopen_flags)
 
+        if os.environ.get("is_mobile", "0") == "1":
+            extra_flags = f" -L/data/data/com.example.mjittor/.cache/jittor/default/clang -lpython3.9 -ljit_utils_core -ljittor_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -I'{mkl_include_path}' -L'{mkl_lib_path}' -lmkldnn -Wl,-rpath='{mkl_lib_path}' -Dmobile"
+
     elif platform.system() == 'Darwin':
         mkl_lib_paths = [
             "/usr/local/lib/libdnnl.dylib",       # x86_64
@@ -153,6 +161,42 @@ def setup_mkl():
     mkl_ops = compile_custom_ops(mkl_op_files, extra_flags=extra_flags)
     LOG.vv("Get mkl_ops: "+str(dir(mkl_ops)))
 
+
+def setup_clblas():
+    global clblas_ops, use_clblas
+    use_clblas = os.environ.get("use_clblas", "1")=="1"
+    clblas_ops = None
+    if not use_clblas: return
+    # clblas_include_path = os.environ.get("clblas_include_path")
+    # clblas_lib_path = os.environ.get("clblas_lib_path")
+    
+    # if clblas_lib_path is None or clblas_include_path is None:
+    #     LOG.v("setup clblas...")
+
+    #     clblas_include_path = 
+
+    # clblas_include_path = os.path.join(clblas_home, "include")
+    # clblas_lib_path = os.path.join(clblas_home, "lib")
+
+    # clblas_lib_name = os.path.join(clblas_lib_path, "libmkldnn.so")
+    # assert os.path.isdir(clblas_include_path)
+    # assert os.path.isdir(clblas_lib_path)
+    # LOG.v(f"clblas_include_path: {clblas_include_path}")
+    # LOG.v(f"clblas_lib_path: {clblas_lib_path}")
+
+    extra_flags = "-I/home/ygw/mkl/clBLAS/src -I/usr/local/cuda/targets/x86_64-linux/include/ -L/usr/local/cuda/targets/x86_64-linux/lib -lOpenCL -L/home/ygw/mkl/clBLAS/src/build/library -lclBLAS -Wl,--rpath=/home/ygw/mkl/clBLAS/src/build/library"
+
+    # find all source files
+    clblas_src_dir = os.path.join(jittor_path, "extern", "clblas")
+    clblas_src_files = []
+    for r, _, f in os.walk(clblas_src_dir):
+        for fname in f:
+            clblas_src_files.append(os.path.join(r, fname))
+
+    # clblas_op_dir = os.path.join(jittor_path, "extern", "clblas", "ops")
+    # clblas_op_files = [os.path.join(clblas_op_dir, name) for name in os.listdir(clblas_op_dir)]
+    clblas_ops = compile_custom_ops(clblas_src_files, extra_flags=extra_flags)
+    LOG.vv("Get clblas_ops: "+str(dir(clblas_ops)))
 
 def install_cub(root_folder):
     url = "https://github.com/NVIDIA/cub/archive/1.11.0.tar.gz"
@@ -588,3 +632,4 @@ except Exception as e:
     LOG.w("MKL install failed, msg:", e)
 
 setup_cuda_extern()
+# setup_clblas()

@@ -15,6 +15,7 @@
 #include "graph.h"
 #include "mem/allocator/cuda_dual_allocator.h"
 #include "ops/op_register.h"
+#include "opencl_warper.h"
 
 namespace jittor {
 
@@ -164,6 +165,10 @@ ArrayArgs VarHolder::fetch_sync() {
     #ifdef HAS_CUDA
     migrate_to_cpu(var, exe.allocator);
     #endif
+    #ifdef HAS_OPENCL
+    if (var->allocator->is_opencl())
+        migrate_opencl_to_cpu(var, exe.allocator);
+    #endif
     return {var->mem_ptr, var->shape, var->dtype()};
 }
 
@@ -178,6 +183,13 @@ ItemData VarHolder::item() {
     if (var->allocator->is_cuda()) {
         checkCudaErrors(cudaMemcpy(&data.data, var->mem_ptr, dsize, cudaMemcpyDeviceToHost));
     } else
+    #endif
+    #ifdef HAS_OPENCL
+    if (var->allocator->is_opencl()) {
+        migrate_opencl_to_cpu(var, exe.allocator);
+        cl_int err;
+        err=clEnqueueReadBuffer(opencl_queue, *(cl_mem*)var->mem_ptr, CL_TRUE, 0, dsize, &data.data, 0, 0, 0);
+    } else 
     #endif
     {
         std::memcpy(&data.data, var->mem_ptr, dsize);
@@ -217,6 +229,10 @@ vector<ArrayArgs> fetch_sync(const vector<VarHolder*>& vh) {
     for (uint i=0; i<vh.size(); i++) {
         #ifdef HAS_CUDA
         migrate_to_cpu(vh[i]->var, exe.allocator);
+        #endif
+        #ifdef HAS_OPENCL
+        if (vh[i]->var->allocator->is_opencl())
+            migrate_opencl_to_cpu(vh[i]->var, exe.allocator);
         #endif
         ret[i].ptr = vh[i]->var->mem_ptr;
         ret[i].shape = vh[i]->var->shape;

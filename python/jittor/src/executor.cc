@@ -16,6 +16,8 @@
 #include "mem/allocator/cuda_dual_allocator.h"
 #include "event_queue.h"
 #endif
+#include "opencl_warper.h"
+#include "mem/allocator/opencl_device_allocator.h"
 #include "misc/cuda_flags.h"
 #include "executor.h"
 #include "var.h"
@@ -536,9 +538,7 @@ void Executor::run_sync(vector<Var*> vars, bool device_sync, bool weak_sync) {
     // running
     SetupFreeBuffer setup_free_buffer;
     vector<Var*> outputs_bk;
-    #ifdef HAS_CUDA
     int sync_times = 0;
-    #endif
     auto& jkl = get_jk();
     for (uint rid=0; rid<queue.size(); rid++) {
         int root = queue[rid];
@@ -558,6 +558,14 @@ void Executor::run_sync(vector<Var*> vars, bool device_sync, bool weak_sync) {
         if (PREDICT_BRANCH_NOT_TAKEN(profile_memory_enable))
             memory_profiler.check();
         LOGvvv << "Run" << op << "inputs:" << op->inputs() << "outputs:" << op->outputs();
+        #ifdef HAS_OPENCL
+        if (use_opencl) {
+            for (Var* v : op->inputs())
+                if (!v->allocator->is_opencl()) {
+                    migrate_cpu_to_opencl(v, allocator);
+                }
+        }
+        #endif
         op->do_prepare(jkl);
         bool is_cuda = op->flags.get(NodeFlags::_cuda);
         #ifdef HAS_CUDA
@@ -588,6 +596,27 @@ void Executor::run_sync(vector<Var*> vars, bool device_sync, bool weak_sync) {
             }
         }
         #endif
+        #ifdef HAS_OPENCL
+        if (use_opencl) {
+            if (!is_cuda) {
+                if (last_is_cuda) {
+                    // if prev op in gpu and this op in cpu
+                    //  opencl sync
+                    clFinish(opencl_queue);
+                    sync_times++;
+                }
+                for (Var* v : op->inputs()) {
+                    migrate_opencl_to_cpu(v, allocator);
+                }
+                for (auto* var : op->outputs()) {
+                    var->allocator->free(var->mem_ptr, var->size, var->allocation);
+                    var->mem_ptr = var->allocator = nullptr;
+                    var->allocation = 0;
+                    var->alloc(cpu_allocator);
+                }
+            }
+        }
+        #endif
         #ifdef NODE_MEMCHECK
         if (is_fused_op) {
             for (auto& vi : fused_op.vars)
@@ -610,9 +639,19 @@ void Executor::run_sync(vector<Var*> vars, bool device_sync, bool weak_sync) {
             }
         }
         #endif
+        // migrate to opencl
+        if (PREDICT_BRANCH_NOT_TAKEN((!is_cuda && use_opencl))) {
+            for (Var* v : op->outputs()) {
+                migrate_cpu_to_opencl(v, allocator);
+            }
+        }
         // record trace data
         if (PREDICT_BRANCH_NOT_TAKEN(trace_py_var>=2)) {
             trace_data.record_execution(op, is_fused_op, jkl);
+            #ifdef HAS_OPENCL
+            if (use_opencl)
+                clFinish(opencl_queue);
+            #endif
             #ifdef HAS_CUDA
             if (use_cuda)
                 checkCudaErrors(cudaDeviceSynchronize());
@@ -674,6 +713,13 @@ void Executor::run_sync(vector<Var*> vars, bool device_sync, bool weak_sync) {
     for (Var* v : vars) ASSERT(v->mem_ptr || !v->backward_liveness);
     // clean fetcher free buffer
     fetcher_to_free.clear();
+    #ifdef HAS_OPENCL
+    if (device_sync && use_opencl) {
+        last_is_cuda = false;
+        sync_times++;
+        clFinish(opencl_queue);
+    }
+    #endif
     #ifdef HAS_CUDA
     if (device_sync && use_cuda) {
         last_is_cuda = false;

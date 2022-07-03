@@ -57,6 +57,7 @@ def home():
             json.dump(data,f)
     
     _jittor_home = _home_path
+    print("home: ", _home_path)
     return _home_path
 
 class Logwrapper:
@@ -155,6 +156,8 @@ def try_import_jit_utils_core(silent=None):
         # if is in notebook, must log sync, and we redirect the log
         if is_in_ipynb: os.environ["log_sync"] = "1"
         import jit_utils_core as cc
+        if cc:
+            print("success!!")
         if is_in_ipynb:
             if os.name != 'nt':
                 # windows jupyter has import error
@@ -162,6 +165,7 @@ def try_import_jit_utils_core(silent=None):
                 # TODO: find a better way
                 cc.ostream_redirect(True, True)
     except Exception as _:
+        print(_)
         if int(os.environ.get("log_v", "0")) > 0:
             print(_)
         pass
@@ -192,6 +196,8 @@ def run_cmd(cmd, cwd=None, err_msg=None, print_error=True):
 
 def do_compile(args):
     cmd, cache_path, jittor_path = args
+    if os.environ.get("is_mobile", "0") == "1":
+        cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cmd
     try_import_jit_utils_core(True)
     if cc:
         return cc.cache_compile(cmd, cache_path, jittor_path)
@@ -258,7 +264,7 @@ if os.name=='nt' and getattr(mp.current_process(), '_inheriting', False):
     os.environ["DISABLE_MULTIPROCESSING"] = '1'
     os.environ["log_silent"] = '1'
         
-if os.environ.get("DISABLE_MULTIPROCESSING", '0') == '1':
+if os.environ.get("DISABLE_MULTIPROCESSING", '0') == '1' or os.environ.get("is_mobile", "0") == "1":
     os.environ["use_parallel_op_compiler"] = '0'
     def run_cmds(cmds, cache_path, jittor_path, msg="run_cmds"):
         cmds = [ [cmd, cache_path, jittor_path] for cmd in cmds ]
@@ -330,22 +336,30 @@ def short(s):
     return ss
 
 def find_cache_path():
-    path = home()
-    # jittor version key
-    jtv = "jt"+get_jittor_version().rsplit('.', 1)[0]
-    # cc version key
-    ccv = cc_type+get_version(cc_path)[1:-1] \
-        if cc_type != "cl" else cc_type
-    # os version key
-    osv = platform.platform() + platform.node()
-    if len(osv)>14:
-        osv = osv[:14] + 'x'+get_str_hash(osv)[:2]
-    # py version
-    pyv = "py"+platform.python_version()
-    # cpu version
-    cpuv = get_cpu_version()
-    dirs = [".cache", "jittor", jtv, ccv, pyv, osv, cpuv]
-    dirs = list(map(short, dirs))
+    if os.environ.get("is_mobile", "0") == "1":
+        from pathlib import Path
+        path = "/data/data/com.example.mjittor"
+        cache_name = "default"
+        dirs = [".cache", "jittor", cache_name, os.path.basename(cc_path)]
+        if os.environ.get("debug")=="1":
+            dirs[-1] += "_debug"
+    else:
+        path = home()
+        # jittor version key
+        jtv = "jt"+get_jittor_version().rsplit('.', 1)[0]
+        # cc version key
+        ccv = cc_type+get_version(cc_path)[1:-1] \
+            if cc_type != "cl" else cc_type
+        # os version key
+        osv = platform.platform() + platform.node()
+        if len(osv)>14:
+            osv = osv[:14] + 'x'+get_str_hash(osv)[:2]
+        # py version
+        pyv = "py"+platform.python_version()
+        # cpu version
+        cpuv = get_cpu_version()
+        dirs = [".cache", "jittor", jtv, ccv, pyv, osv, cpuv]
+        dirs = list(map(short, dirs))
     cache_name = "default"
     try:
         if "cache_name" in os.environ:
@@ -365,8 +379,9 @@ def find_cache_path():
         pass
     if os.environ.get("debug")=="1":
         dirs[-1] += "_debug"
-    for name in os.path.normpath(cache_name).split(os.path.sep):
-        dirs.append(name)
+    if os.environ.get("is_mobile", "0") == "0":
+        for name in os.path.normpath(cache_name).split(os.path.sep):
+            dirs.append(name)
     os.environ["cache_name"] = cache_name
     LOG.v("cache_name: ", cache_name)
     path = os.path.join(path, *dirs)
