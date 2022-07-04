@@ -759,10 +759,12 @@ def compile_custom_ops(
     LOG.vvvv(f"Build sources:{builds}")
     if os.environ.get("is_mobile", "0") == "1":
         mobile_flag = "-Dmobile"
+        mobile_cache = "default"
         if os.environ.get("is_c_ver", "0") == "1":
             mobile_flag = mobile_flag + " -DCVER"
-        compile(cc_path, extra_flags+cc_flags+opt_flags+includes+f" -L/data/data/com.example.mjittor/.cache/jittor/default/clang -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 {mobile_flag}", builds, gen_lib)
-        os.system(f"ln -s {gen_lib} /data/data/com.example.mjittor/.cache/jittor/default/clang/custom_ops/{gen_name}.so")
+            mobile_cache = "cdefault"
+        compile(cc_path, extra_flags+cc_flags+opt_flags+includes+f" -L/data/data/com.example.mjittor/.cache/jittor/{mobile_cache}/clang -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 {mobile_flag}", builds, gen_lib)
+        os.system(f"ln -s {gen_lib} /data/data/com.example.mjittor/.cache/jittor/{mobile_cache}/clang/custom_ops/{gen_name}.so")
     else:
         compile(cc_path, extra_flags+cc_flags+opt_flags+includes, builds, gen_lib)
 
@@ -1036,13 +1038,11 @@ if nvcc_path is None:
 opencl_path = find_opencl()
 has_opencl = 0
 check_opencl()
-
 if "nvcc_path" in os.environ:
     nvcc_path = os.environ["nvcc_path"]
 gdb_path = env_or_try_find('gdb_path', 'gdb')
 addr2line_path = try_find_exe('addr2line')
 has_pybt = check_pybt(gdb_path, python_path)
-
 if nvcc_path:
     # gen cuda key for cache_path
     cu = "cu"
@@ -1095,7 +1095,6 @@ if platform.system() == 'Darwin':
         cc_flags += "  -L/opt/homebrew/lib "
 
 opt_flags = ""
-
 py_include = jit_utils.get_py3_include_path()
 LOG.v(f"py_include: {py_include}")
 extension_suffix = jit_utils.get_py3_extension_suffix()
@@ -1105,7 +1104,6 @@ else:
     lib_suffix = ""
 LOG.v(f"extension_suffix: {extension_suffix}")
 so = ".so" if os.name != 'nt' else ".dll"
-
 
 kernel_opt_flags = os.environ.get("kernel_flags", "") + opt_flags
 if platform.system() == 'Darwin':
@@ -1228,7 +1226,6 @@ make_cache_dir(os.path.join(cache_path, "gen"))
 make_cache_dir(os.path.join(cache_path, "tmp"))
 ck_path = os.path.join(cache_path, "checkpoints")
 make_cache_dir(ck_path)
-
 # build cache_compile
 cc_flags += f" -I\"{os.path.join(jittor_path, 'src')}\" "
 cc_flags += py_include
@@ -1239,7 +1236,6 @@ if os.environ.get("is_mobile", "0") == "1":
     cc_flags += f" -I/data/data/com.example.mjittor/termux/include -I/data/data/com.example.mjittor/termux/include/c++/v1 {mobile_flag}"
 check_cache_compile()
 LOG.v(f"Get cache_compile: {jit_utils.cc}")
-
 # check cuda
 has_cuda = 0
 check_cuda()
@@ -1394,9 +1390,11 @@ if use_data_gz:
 if os.environ.get("is_mobile", "0") == "1":
     cc_flags += f" -l\"jit_utils_core\" "
     mobile_flag = "-Dmobile"
+    mobile_cache = "default"
     if os.environ.get("is_c_ver", "0") == "1":
         mobile_flag = mobile_flag + " -DCVER"
-    compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/default/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ {mobile_flag}', files, 'jittor_core'+extension_suffix)
+        mobile_cache = "cdefault"
+    compile(cc_path, cc_flags+opt_flags+f' -L/data/data/com.example.mjittor/termux/lib -I/data/data/com.example.mjittor/termux/include/c++/v1 -L/data/data/com.example.mjittor/.cache/jittor/{mobile_cache}/clang/ -lomp -lpython3.9 -ljit_utils_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/{mobile_cache}/clang/ {mobile_flag}', files, 'jittor_core'+extension_suffix)
     cc_flags += f" -l\"jittor_core\" "
 else:
     cc_flags += f" -l\"jit_utils_core{lib_suffix}\" "
@@ -1404,11 +1402,15 @@ else:
     cc_flags += f" -l\"jittor_core{lib_suffix}\" "
 
 # TODO: move to compile_extern.py
-# compile_extern()
-
-with jit_utils.import_scope(import_flags):
-    import jittor_core as core
-
+# compile_extern()    try:
+try:
+    print("importing", flush=True)
+    with jit_utils.import_scope(import_flags):
+        import jittor_core as core
+except Exception as _:
+    print(_, flush=True)
+    exit(0)
+print("Dasdasdasd999", flush=True)
 flags = core.Flags()
 
 if has_cuda:
@@ -1434,7 +1436,7 @@ if has_cuda:
         flags.cuda_archs = archs
         nvcc_flags += f" -arch=compute_{min(archs)} "
         nvcc_flags += ''.join(map(lambda x:f' -code=sm_{x} ', archs))
-
+print("Dasdasdasd999", flush=True)
 flags.cc_path = cc_path
 flags.cc_type = cc_type
 flags.cc_flags = cc_flags + kernel_opt_flags
@@ -1449,3 +1451,4 @@ flags.addr2line_path = addr2line_path
 flags.has_pybt = has_pybt
 
 core.set_lock_path(lock.lock_path)
+print("Dasdasdasd1000", flush=True)

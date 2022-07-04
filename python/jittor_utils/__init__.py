@@ -156,8 +156,6 @@ def try_import_jit_utils_core(silent=None):
         # if is in notebook, must log sync, and we redirect the log
         if is_in_ipynb: os.environ["log_sync"] = "1"
         import jit_utils_core as cc
-        if cc:
-            print("success!!")
         if is_in_ipynb:
             if os.name != 'nt':
                 # windows jupyter has import error
@@ -197,7 +195,10 @@ def run_cmd(cmd, cwd=None, err_msg=None, print_error=True):
 def do_compile(args):
     cmd, cache_path, jittor_path = args
     if os.environ.get("is_mobile", "0") == "1":
-        cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cmd
+        if os.environ.get("is_c_ver", "0") == "1":
+            cmd = "cd /data/data/com.example.mjittor/.cache/jittor/cdefault/clang && " + cmd
+        else:
+            cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cmd
     try_import_jit_utils_core(True)
     if cc:
         return cc.cache_compile(cmd, cache_path, jittor_path)
@@ -340,6 +341,8 @@ def find_cache_path():
         from pathlib import Path
         path = "/data/data/com.example.mjittor"
         cache_name = "default"
+        if os.environ.get("is_c_ver", "0") == "1":
+            cache_name = "cdefault"
         dirs = [".cache", "jittor", cache_name, os.path.basename(cc_path)]
         if os.environ.get("debug")=="1":
             dirs[-1] += "_debug"

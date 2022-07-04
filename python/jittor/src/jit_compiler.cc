@@ -236,12 +236,17 @@ jit_op_entry_t compile(const string& jit_key, const string& src, const bool is_c
     string cmd;
     
     auto symbol_name = get_symbol_name(jit_key);
+    #ifdef CVER
+    string mobile_cache = "cdefault";
+    #else
+    string mobile_cache = "default";
+    #endif
 #ifndef _MSC_VER
     if (is_cuda_op) {
         if (use_opencl) {
-            cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cc_path + " -I"+opencl_path+"/include -L"+opencl_path+"/lib -lOpenCL '" + jit_src_path + "'" + other_src
+            cmd = "cd /data/data/com.example.mjittor/.cache/jittor/" + mobile_cache + "/clang && " + cc_path + " -I"+opencl_path+"/include -L"+opencl_path+"/lib -lOpenCL '" + jit_src_path + "'" + other_src
                 + cc_flags + extra_flags
-                + " -Dmobile -L/data/data/com.example.mjittor/.cache/jittor/default/clang -L/data/data/com.example.mjittor/termux/lib -lpython3.9 -lomp -ljit_utils_core -ljittor_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ -o '" + jit_lib_path + "'";
+                + " -Dmobile -L/data/data/com.example.mjittor/.cache/jittor/" + mobile_cache + "/clang -L/data/data/com.example.mjittor/termux/lib -lpython3.9 -lomp -ljit_utils_core -ljittor_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/" + mobile_cache + "/clang/ -o '" + jit_lib_path + "'";
         } else {
             cmd = "\"" + nvcc_path + "\""
                 + " \"" + jit_src_path + "\"" + other_src
@@ -253,10 +258,10 @@ jit_op_entry_t compile(const string& jit_key, const string& src, const bool is_c
         }
     } else {
 #ifdef mobile
-        cmd = "cd /data/data/com.example.mjittor/.cache/jittor/default/clang && " + cc_path
+        cmd = "cd /data/data/com.example.mjittor/.cache/jittor/" + mobile_cache + "/clang && " + cc_path
             + " '" + jit_src_path + "'" + other_src
             + cc_flags + extra_flags
-            + " -Dmobile -L/data/data/com.example.mjittor/.cache/jittor/default/clang -L/data/data/com.example.mjittor/termux/lib -lpython3.9 -lomp -ljit_utils_core -ljittor_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/default/clang/ -o '" + jit_lib_path + "'";
+            + " -Dmobile -L/data/data/com.example.mjittor/.cache/jittor/" + mobile_cache + "/clang -L/data/data/com.example.mjittor/termux/lib -lpython3.9 -lomp -ljit_utils_core -ljittor_core -Wl,-rpath=/data/data/com.example.mjittor/.cache/jittor/" + mobile_cache + "/clang/ -o '" + jit_lib_path + "'";
 #else
         cmd = "\"" + cc_path + "\""
             + " \"" + jit_src_path + "\"" + other_src
