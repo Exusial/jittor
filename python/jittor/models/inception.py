@@ -9,15 +9,7 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
     return model
 
 class Inception3(nn.Module):
-    """ Inceptionv3 model architecture.
-
-    Args:
-
-    * num_classes: Number of classes. Default: 1000.
-    * aux_logits: If True, add an auxiliary branch that can improve training. Default: True
-    * inception_blocks: List of seven blocks, [conv_block, inception_a, inception_b, inception_c, inception_d, inception_e, inception_aux]. If None, will use [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux] instead. Default: None.
-    * init_weights: Defualt: True.
-    """
+    "\n构建一个inception_v3模型\n\n    inception_v3源自于论文[Rethinking the Inception Architecture for Computer Vision](https://arxiv.org/abs/1512.00567)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.inception import *\n        >>> net = inception_v3(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的inception_v3模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     
     def __init__(self, num_classes=1000, aux_logits=True, inception_blocks=None, init_weights=True):
         super(Inception3, self).__init__()

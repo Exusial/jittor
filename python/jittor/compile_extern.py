@@ -623,6 +623,7 @@ def inside_mpi():
     return "OMPI_COMM_WORLD_SIZE" in os.environ
 
 def setup_mpi():
+    "配置 ``Message Passing Interface`` ( ``MPI`` )环境。先定义全局变量 ``use_mpi`` ， ``mpi_ops`` ， ``mpi`` ， ``has_mpi`` ， ``mpicc_path`` 。然后检查环境变量 ``use_mpi`` 是否为1和 ``mpicc_path`` 的值，如果 ``mpicc_path`` 为空，则 ``use_mpi`` 为 ``False`` ；否则 ``use_mpi`` 为 ``True`` 并且 ``has_mpi`` 为 ``True`` 。如果 ``use_mpi`` 为 ``False`` ，则直接返回；如果 ``use_mpi`` 为 ``True`` ，检查 ``MPI`` 的编译和链接标志，并获取 ``MPI`` 源文件。最后设置 ``mpi`` 和 ``mpi_ops`` 。\n\n    参数：\n        无。\n\n    代码示例：\n        >>> jt.setup_mpi()\n\n    返回值：\n        无。\n    \n"
     global mpi_ops, mpi, use_mpi
     global mpicc_path, has_mpi
     use_mpi = os.environ.get("use_mpi", "1")=="1"
@@ -669,6 +670,7 @@ def setup_mpi():
     LOG.vv("Get mpi: "+str(mpi.__dict__.keys()))
     LOG.vv("Get mpi_ops: "+str(mpi_ops.__dict__.keys()))
     def wrapper(func):
+        "     一个装饰器函数，用于返回一个内部函数 ``inner`` ，内部函数执行传入的功能函数 ``func`` 。\n\n    参数：\n        - func (Callable): 被包装的功能函数。\n        \n    返回值：\n        返回新的函数对象，包含了 ``func`` 的功能，并将所接收到的所有位置参数和关键字参数传递给该功能函数 (Callable)\n    \n\n"
         def inner(self, *args, **kw):
             return func(self, *args, **kw)
         inner.__doc__ = func.__doc__

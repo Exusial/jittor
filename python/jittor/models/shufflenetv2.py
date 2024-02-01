@@ -91,25 +91,30 @@ class ShuffleNetV2(nn.Module):
         return self._forward_impl(x)
 
 def _shufflenetv2(arch, *args):
+    "\n创建ShuffleNetV2模型\n    ShuffleNetV2源自于[ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design](https://arxiv.org/abs/1807.11164) \n    \n    参数:\n        - `arch` (str): 用于指定模型的架构样式。\n        - `*args`: 额外参数，用于构造ShuffleNetV2模型。\n\n    返回值:\n        - 返回一个新的ShuffleNetV2模型实例。\n    \n    代码示例：\n        >>> model = _shufflenetv2('shufflenetv2_1x')\n\n\n"
     model = ShuffleNetV2(*args)
     return model
 
 def shufflenet_v2_x0_5(pretrained=False):
+    "\n构建一个shufflenet_v2_x0_5模型\n\n    shufflenet_v2源自论文 [ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design](https://arxiv.org/pdf/1807.11164.pdf)。ShuffleNet V2是一种轻量级网络架构，旨在平衡速度和准确性。该模型比传统网络如ResNet更小，计算成本更低，同时保持相当的准确性。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.shufflenetv2 import *\n        >>> net = shufflenet_v2_x0_5(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的shufflenet_v2_x0_5模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = _shufflenetv2('shufflenetv2_x0.5', [4, 8, 4], [24, 48, 96, 192, 1024])
     if pretrained: model.load("jittorhub://shufflenet_v2_x0_5.pkl")
     return model
 
 def shufflenet_v2_x1_0(pretrained=False):
+    "\n构建一个shufflenet_v2_x1_0模型\n\n    shufflenet_v2源自论文 [ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design](https://arxiv.org/pdf/1807.11164.pdf)。ShuffleNet V2是一种轻量级网络架构，旨在平衡速度和准确性。该模型比传统网络如ResNet更小，计算成本更低，同时保持相当的准确性。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.shufflenetv2 import *\n        >>> net = shufflenet_v2_x1_0(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的shufflenet_v2_x1_0模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = _shufflenetv2('shufflenetv2_x1.0', [4, 8, 4], [24, 116, 232, 464, 1024])
     if pretrained: model.load("jittorhub://shufflenet_v2_x1_0.pkl")
     return model
 
 def shufflenet_v2_x1_5(pretrained=False):
+    "\n构建一个shufflenet_v2_x1_5模型\n\n    shufflenet_v2源自论文 [ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design](https://arxiv.org/pdf/1807.11164.pdf)。ShuffleNet V2是一种轻量级网络架构，旨在平衡速度和准确性。该模型比传统网络如ResNet更小，计算成本更低，同时保持相当的准确性。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.shufflenetv2 import *\n        >>> net = shufflenet_v2_x1_5(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的shufflenet_v2_x1_5模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = _shufflenetv2('shufflenetv2_x1.5', [4, 8, 4], [24, 176, 352, 704, 1024])
     if pretrained: model.load("jittorhub://shufflenet_v2_x1_5.pkl")
     return model
 
 def shufflenet_v2_x2_0(pretrained=False):
+    "\n构建一个shufflenet_v2_x2_0模型\n\n    shufflenet_v2源自论文 [ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design](https://arxiv.org/pdf/1807.11164.pdf)。ShuffleNet V2是一种轻量级网络架构，旨在平衡速度和准确性。该模型比传统网络如ResNet更小，计算成本更低，同时保持相当的准确性。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.shufflenetv2 import *\n        >>> net = shufflenet_v2_x2_0(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的shufflenet_v2_x2_0模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = _shufflenetv2('shufflenetv2_x2.0', [4, 8, 4], [24, 244, 488, 976, 2048])
     if pretrained: model.load("jittorhub://shufflenet_v2_x2_0.pkl")
     return model

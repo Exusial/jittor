@@ -13,18 +13,7 @@ from functools import partial
 
 #TODO:full_matrices=1
 def svd(x):
-    r'''
-    calculate the Singular Value Decomposition of x.It follows the below fomula:
-    x = usv*
-    only support full matrices == False ver now, which means:
-    x's shape (...,M,K)
-    u's shape (...,M,K)
-    s's shape (...,K)
-    v's shape (...,K,N)
-    where K is min(M,N).
-    :param x:
-    :return:u,s,v.
-    '''
+    "     计算输入矩阵x的奇异值分解。计算方式遵循公式： :math:`x` =  :math:`u`  :math:`s`  :math:`v` 。目前只支持 ``full matrices`` == ``False`` 的版本，即条件如下: :math:`x` 的维度 (..., :math:`M` , :math:`K` )， :math:`u` 的维度 (..., :math:`M` , :math:`K` )， :math:`u` 的维度 (..., :math:`K` , :math:`N` )，其中 :math:`K` 是min( :math:`M` , :math:`N` ).\n    \n    参数:\n        - x (ndarray): 输入的待分解矩阵。\n    \n    代码示例:\n        >>> import numpy as np\n        >>> X = jt.Var([[1., 0., 0., 0., 2.], [0., 0., 3., 0., 0.], [0., 0., 0., 0., 0.], [0., 2., 0., 0., 0.]])\n        >>> u, s, v = svd(X)\n        >>> print(\"u=\\n\", u)\n        >>> print(\"s=\\n\", s)\n        >>> print(\"v=\\n\", v)\n        jt.Var([[ 0.  1.  0.  0.] [ 1.  0.  0.  0.] [ 0.  0.  0.  1.] [ 0.  0. -1.  0.]], dtype=float32) \n        jt.Var([3.       2.236068 2.       0.      ], dtype=float32)\n        jt.Var([[-0.         0.         1.        -0.         0.       ]\n        [ 0.4472136  0.         0.         0.         0.8944272]\n        [ 0.        -1.         0.         0.         0.       ]\n        [ 0.         0.         0.         1.         0.       ]], dtype=float32)\n    \n    返回值:\n        返回奇异值分解后的各部分，u,s,v（ndarray）\n    \n"
     def forward_code(np, data):
         a = data["inputs"][0]
         u, s, v = data["outputs"]
@@ -94,13 +83,7 @@ def svd(x):
 
 
 def eigh(x):
-    r"""
-    calculate the eigenvalues and eigenvectors of x.
-    :param x (...,M,M):
-    :return:w, v.
-    w (...,M) : the eigenvalues.
-    v (...,M,M) : normalized eigenvectors.
-    """
+    "     计算输入矩阵 :math:`x` 的特征值和特征向量。特征值和特征向量的计算公式：\n\n    .. math::\n        A v = \\lambda v\n\n    其中： :math:`A` 是单位矩阵， :math:`v` 是特征向量， :math:`\\lambda` 是特征值。\n\n    参数：\n        - x (Var): 输入矩阵，维度为（...,  :math:`M` ,  :math:`M` ），其中 :math:`M` 是矩阵的大小。\n\n    返回值：\n        返回两个变量的元组（ :math:`w` ,  :math:`v` ）（tuple (jittor.Var, jittor.Var)），其中 :math:`w` 是特征值，维度为（...,  :math:`M` ）， :math:`v` 是规范化后的特征向量，维度为（...,  :math:`M` ,  :math:`M` ）。\n    \n\n"
     def forward_code(np, data):
         a = data["inputs"][0]
         w, v = data["outputs"]

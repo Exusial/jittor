@@ -30,6 +30,10 @@
    jittor.distributions
    jittor.attention
    jittor.loss3d
+   jittor.models
+   jittor.einops
+   jittor.sparse
+   jittor.weightnorm
 
 
 .. toctree::

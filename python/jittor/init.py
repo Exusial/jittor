@@ -14,26 +14,7 @@ import math
 import warnings
 
 def eye(shape, dtype="float32"):
-    ''' Generate 2-D identity matrix.
-
-    Args:
-        shape (int or tuple of int):
-            shape of the output matrix
-        dtype (string):
-            dtype of the output matrix, default float32
-    
-    Return:
-        A Jittor Var of identity matrix.
-
-    Example::
-
-        from jittor import init
-        print(init.eye(2))
-        # output: [[1.,0.],[0.,1.]]
-        print(init.eye((2,3), "float32"))
-        # output: [[1.,0.,0.],[0.,1.,0.]]
-
-    '''
+    "\n创建一个形状为 ``shape`` 的单位矩阵。\n\n    单位矩阵的定义为：\n    对于任何i, j (0 <= i, j < var的维度)，当i等于j时，输出为1；否则为0。\n\n    .. math::\n        eye(i, j) =\n        \\begin{cases}\n        1, & \\text{如果} i = j \\\\\n        0, & \\text{否则}\n        \\end{cases}\n\n\n    参数：\n        - shape (int or int...): 规定返回矩阵的形状，如果 ``shape`` 为整数， 那么返回的矩阵的形状为 ``(shape, shape)``。\n        - dtype (var.dtype, optional): 数据类型，默认为 ``float32``\n        \n    代码示例：\n        >>> init.eye(2)\n        jt.Var([[1. 0.]\n                [0. 1.]], dtype=float32)\n        >>> init.eye((2, 3), dtype='int32')\n        jt.Var([[1 0 0]\n                [0 1 0]], dtype=int32)\n\n    返回值：\n        返回一个单位矩阵\n    \n    注意事项：\n        - ``shape`` 如果是整数序列，只能传入两个维度的长度，否则会引起异常\n\n\n"
     if isinstance(shape, int):
         shape = (shape,shape)
     assert len(shape)==2, f"len of shape should be 2, but got {shape}"
@@ -41,122 +22,25 @@ def eye(shape, dtype="float32"):
     return (index[0]==index[1]).unary(dtype)
 
 def eye_(var):
-    ''' Inplace initialize variable with identity matrix.
-
-    Args:
-        var (Jittor Var):
-            Var to initialize with identity matrix.
-    
-    Return:
-        var itself.
-    
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.eye_(linear.weight)
-        print(linear.weight)
-        # output: [[1.,0.],[0.,1.]]
-        linear.weight.eye_() # This is ok too
-
-    '''
+    "\n原地修改矩阵 ``var``，将其成为单位矩阵。\n\n    单位矩阵的定义为：\n    对于任何i, j (0 <= i, j < var的维度)，当i等于j时，输出为1；否则为0。\n\n    .. math::\n        eye(i, j) =\n        \\begin{cases}\n        1, & \\text{如果} i = j \\\\\n        0, & \\text{否则}\n        \\end{cases}\n    \n\n    参数：\n        - var (Var): Var类型的张量\n\n    代码示例：\n        >>> x = jt.randn((3,2))\n        >>> x\n        jt.Var([[-0.582047    1.1068922 ]\n                [ 0.08440255 -0.86142904]\n                [ 0.06269896 -0.979008  ]], dtype=float32)\n        >>> init.eye_(x)\n        >>> x\n        jt.Var([[1. 0.]\n                [0. 1.]\n                [0. 0.]], dtype=float32)\n\n    返回值：\n        返回一个形状和 ``var`` 相同的单位矩阵\n\n\n"
     return var.assign(eye(var.shape, var.dtype))
 Var.eye_ = eye_
 
 def constant(shape, dtype="float32", value=0.0):
-    '''Generate constant Jittor Var.
-
-    Args:
-        shape (int or tuple of int):
-            shape of the output Var
-        dtype (string):
-            dtype of the output Var, default float32
-        value (int or float):
-            value to be filled in output Var
-    
-    Return:
-        A Jittor Var which filled by constant value.
-
-    Example::
-
-        from jittor import init
-        print(init.constant(2))
-        # output: [0.,0.]
-        print(init.constant((2,3), value=1.))
-        # output: [[1.,1.,1.],[1.,1.,1.]]
-
-    '''
+    "\n创建一个数值均为 ``value``, 形状由可变参数 ``shape`` 确定， 默认填充 ``float32`` 类型的零值。\n\n    参数：\n\n    - shape (int...): 整数序列，定义了输出的形状\n    - dtype (var.dtype, optional): 数据类型，默认为 ``float32``\n    - value (int or float): 填充的数值\n        \n    代码示例：\n        >>> init.constant(2)\n        jt.Var([0. 0.], dtype=float32)\n        >>> init.constant((2,3), \"float32\", 3.8)\n        >>> x\n        jt.Var([[3.8 3.8 3.8]\n                [3.8 3.8 3.8]], dtype=float32)\n\n    返回值：\n        返回一个填充值为 ``value`` ，形状大小为 ``shape`` 的张量(Var)\n\n\n"
     return jt.array(value).unary(dtype).broadcast(NanoVector(shape))
 
 def constant_(var, value=0.0):
-    ''' Inplace initialize variable with constant value.
-
-    Args:
-        var (Jittor Var):
-            Var to initialize with constant value.
-    
-    Return:
-        var itself.
-    
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.constant_(linear.weight)
-        print(linear.weight)
-        # output: [[0.,0.],[0.,0.]]
-        linear.weight.constant_() # This is ok too
-
-    '''
+    " \n原地修改张量 ``var`` ，将其修改为数值均为 ``value`` 的张量，默认填充零值。\n\n    参数：\n\n    - var (Var): Var类型的张量\n    - value (int or float): 整数序列，定义了输出的形状\n        \n    代码示例：\n        >>> x = jt.randn((3,2))\n        >>> x\n        jt.Var([[ 0.0335454  -0.18658346]\n                [-0.53283346 -1.2073938 ]\n                [-1.344916   -1.6093305 ]], dtype=float32)\n        >>> init.constant_(x, 3.8)\n        >>> x\n        >jt.Var([[3.8 3.8]\n                 [3.8 3.8]\n                 [3.8 3.8]], dtype=float32)\n\n    返回值：\n        就地修改 ``var`` ，返回一个填充值为 ``value`` ，形状和 ``var`` 相同的张量(Var)\n\n\n"
     return var.assign(constant(var.shape, var.dtype, value))
 Var.constant_ = constant_
 fill = Var.fill_ = constant_
 
 def zero(shape, dtype="float32"):
-    '''Generate zero Jittor Var.
-
-    Args:
-        shape (int or tuple of int):
-            shape of the output Var
-        dtype (string):
-            dtype of the output Var, default float32
-    
-    Return:
-        A Jittor Var which filled by constant value.
-
-    Example::
-
-        from jittor import init
-        print(init.zero(2))
-        # output: [0.,0.]
-        print(init.zero((2,3)))
-        # output: [[0.,0.,0.],[0.,0.,0.]]
-
-    '''
+    "  \n返回一个全为0的张量(Var)，形状由可变参数 ``shape`` 定义，数据类型由 ``dtype`` 定义。如果不给定 ``dtype`` , 默认类型为 ``float32``。\n\n    参数：\n        - shape (int...): 整数序列，定义了输出的形状\n        - dtype (var.dtype, optional): 数据类型，默认为`float32`\n        \n    代码示例：\n        >>> init.zero((3,2), dtype='int32')\n        jt.Var([[0 0]\n                [0 0]\n                [0 0]], dtype=int32)\n        \n    返回值：\n        全为0的张量(Var)\n\n    注意事项：\n        - 该函数和 ``jt.zeros()`` 用处一致\n\n"
     return constant(shape, dtype, 0)
 def zero_(var):
-    ''' Inplace initialize variable with zero.
-
-    Args:
-        var (Jittor Var):
-            Var to initialize with zero.
-    
-    Return:
-        var itself.
-    
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.zero_(linear.weight)
-        print(linear.weight)
-        # output: [[0.,0.],[0.,0.]]
-        linear.weight.zero_() # This is ok too
-
-    '''
+    " 原地修改张量 ``var`` ，将其修改为数值均为0的张量。\n\n    参数：\n        - var (Var): Var类型的张量\n        \n    代码示例：\n        >>> x = jt.randn((3,2))\n        >>> x\n        jt.Var([[-1.1730903   0.21458259]\n                [ 1.0399616   0.07660236]\n                [-1.8453276  -0.95629567]], dtype=float32)\n        >>> init.zero_(x)\n        >>> x\n        jt.Var([[0. 0.]\n                [0. 0.]\n                [0. 0.]], dtype=float32)\n        \n    返回值：\n        全为0的张量(Var)\n\n"
     return var.assign(zero(var.shape, var.dtype))
 Var.zero_ = zero_
 
@@ -165,148 +49,28 @@ def random_(var):
 Var.random_ = random_ 
 
 def one(shape, dtype="float32"):
-    '''Generate Jittor Var filled by one.
-
-    Args:
-        shape (int or tuple of int):
-            shape of the output Var
-        dtype (string):
-            dtype of the output Var, default float32
-    
-    Return:
-        A Jittor Var which filled by one.
-
-    Example::
-
-        from jittor import init
-        print(init.one(2))
-        # output: [1.,1.]
-        print(init.one((2,3)))
-        # output: [[1.,1.,1.],[1.,1.,1.]]
-
-    '''
+    "\n返回一个全为1的张量(Var)，形状由可变参数 ``shape`` 定义, 数据类型由可变参数 ``dtype`` 定义，默认类型  ``float32``。\n\n    参数：\n        - shape (int...): 整型序列，定义了输出的形状\n        - dtype (var.dtype, optional): 数据类型，默认为 ``float32``\n        \n    代码示例：\n        >>> init.one(3,4)\n        jt.Var([[1. 1. 1. 1.]\n                [1. 1. 1. 1.]\n                [1. 1. 1. 1.]], dtype=float32)\n        >>> init.one(5)\n        jt.Var([1. 1. 1. 1. 1.], dtype=float32)\n        \n    返回值：\n        全为1的张量(Var)\n\n\n"
     return constant(shape, dtype, 1)
 def one_(var):
-    ''' Inplace initialize variable with one.
-
-    Args:
-        var (Jittor Var):
-            Var to initialize with one.
-    
-    Return:
-        var itself.
-    
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.one_(linear.weight)
-        print(linear.weight)
-        # output: [[1.,1.],[1.,1.]]
-        linear.weight.one_() # This is ok too
-
-    '''
+    "\n原地修改张量 ``var`` ，将其数值全部填充为1，数据类型保持不变。\n    \n    参数：\n        - var (Var): Var类型的张量\n        \n    代码示例：\n        >>> x = jt.randn((3,2))\n        >>> x\n        jt.Var([[ 0.8584159  -1.1204817 ]\n                [ 0.5418147  -0.62170196]\n                [-0.91137475 -0.13982968]], dtype=float32)\n        >>> init.one_(x)\n        >>> x\n        jt.Var([[1. 1.]\n                [1. 1.]\n                [1. 1.]], dtype=float32)\n        \n    返回值：\n        就地修改张量 ``var`` ，返回一个数值全为1的张量\n\n"
     return var.assign(one(var.shape, var.dtype))
 Var.one_ = one_
 
 def uniform(shape, dtype="float32", low=0, high=1):
-    '''Generate random uniform Jittor Var.
-
-    Args:
-        shape (int or tuple of int):
-            shape of the output Var
-        dtype (string):
-            dtype of the output Var, default float32
-        low (int or float or Var):
-            lower bound value of the random uniform
-        high (int or float or Var):
-            upper bound value of the random uniform
-
-    Return:
-        A Jittor Var which filled by random uniform.
-
-    Example::
-
-        from jittor import init
-        print(init.uniform(5))
-        # output: [0.202268, 0.518688, 0.595274, 0.777354, 0.981979]
-        print(init.uniform((2,3), low=-1, high=1))
-        # output: [[ 0.6647397   0.2801202  -0.01981187]
-        #          [-0.9779438  -0.30149996  0.69056886]]
-
-    '''
+    "\n创建一个张量，其形状由可变参数 ``shape`` 决定， 其数局类型由 ``dtype`` 决定， 其数值满足如下均匀分布：\n    \n    .. math::\n        out_i \\sim \\mathcal{U}(low, high)\n\n\n    参数：\n        - shape (int...): 整型序列，定义了输出的形状\n        - dtype (var.dtype, optional): 数据类型，默认为 ``float32``\n        - low (int or Var, optional): 均匀分布的上界， 默认值为0\n        - high (int or Var, optional): 均匀分布的下界，默认值为1\n        \n    代码示例：\n        >>> init.uniform((3,2))\n        jt.Var([[0.82488173 0.7875814 ]\n                [0.8802127  0.7350983 ]\n                [0.79734576 0.9903714 ]], dtype=float32)\n        >>> init.uniform((2,2), 'float32', 0, 10)\n        jt.Var([[0.35382926 6.8104105 ]\n                [2.5638878  1.2676293 ]], dtype=float32)\n        \n    返回值：\n        返回一个数值符合均匀分布的张量\n\n"
     return jt.random(NanoVector(shape), dtype) * (low - high) + high
 
 def uniform_(var, low=0, high=1):
-    ''' Inplace initialize Jittor Var by random uniform.
-
-    Args:
-        var (Jittor Var):
-            Var to be initialized by random uniform
-        low (int or float or Var):
-            lower bound value of the random uniform
-        high (int or float or Var):
-            upper bound value of the random uniform
-
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.uniform_(linear.weight, -1.0, 1.0)
-        print(linear.weight)
-        # output: [[ 0.6647397   0.2801202], [-0.9779438  -0.30149996]]
-        linear.weight.uniform_(-1.0, 1.0) # This is ok too
-
-    '''
+    "\n原地修改张量 ``var`` ，将其数值填充满足如下均匀分布的随机数：\n\n    .. math::\n        out_i \\sim \\mathcal{U}(low, high)\n\n    参数：\n        - var (Var): Var类型的张量\n        - low (int or Var, optional): 均匀分布的上界， 默认值为0\n        - high (int or Var, optional): 均匀分布的下界，默认值为1\n        \n    代码示例：\n        >>> x = jt.ones((3,2))\n        >>> x\n        jt.Var([[1. 1.]\n                [1. 1.]\n                [1. 1.]], dtype=float32)\n        >>> init.uniform_(x)\n        >>> x\n        jt.Var([[0.82488173 0.7875814 ]\n                [0.8802127  0.7350983 ]\n                [0.79734576 0.9903714 ]], dtype=float32)\n        \n    返回值：\n        就地修改张量 ``var`` ，返回一个数值符合均匀分布的张量\n\n"
     return var.assign(uniform(var.shape, var.dtype, low, high))
 Var.uniform_ = uniform_
 
 def gauss(shape, dtype="float32", mean=0.0, std=1.0):
-    ''' Return Jittor Var initialize by random gauss.
-
-    Args:
-        shape (int or tuple of int):
-            shape of the output Var
-        dtype (string):
-            dtype of the output Var, default float32
-        mean (int or float or Var):
-            mean value of the random gauss
-        std (int or float or Var):
-            std value of the random gauss
-
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        a = init.gauss((2,2), "float32", 0.0, 1.0)
-        print(a)
-
-    '''
+    "\n创建一个张量，其形状由 ``shape`` 指定，数据类型为  ``dtype`` ，元素值遵循均值为 ``mean`` 和标准差为 ``std`` 的高斯分布（正态分布）的张量。\n\n    .. math::\n        out_i \\sim \\mathcal{N}(mean, std^2)\n\n    参数：\n        - shape (int...): 整型序列，定义了输出的形状\n        - dtype (var.dtype, optional): 数据类型，默认为 ``float32``\n        - mean (float or Var, optional): 高斯分布的均值， 默认值为0.0\n        - std (float or Var, optional): 高斯分布的标准差，默认值为1.0\n        \n    代码示例：\n        >>> init.gauss((3,2))\n        jt.Var([[-1.09277    -0.22924843]\n                [-0.5264394  -0.13242662]\n                [-1.1316705   1.2506602 ]], dtype=float32)\n        >>> init.gauss((2,2), 'float32', 0, 10)\n        jt.Var([[ 3.457805   5.8171034]\n                [-1.6440934  2.1744032]], dtype=float32)\n        \n    返回值：\n        返回一个数值符合高斯分布的张量\n\n    注意事项：\n        - 确保指定的 ``std`` 是非负的，因为标准差不能是负数\n\n"
     return jt.random(NanoVector(shape), dtype, "normal") * std + mean
 
 def gauss_(var, mean=0.0, std=1.0):
-    ''' Inplace initialize Jittor Var by random gauss.
-
-    Args:
-        var (Jittor Var):
-            Var to be initialized by random gauss
-        mean (int or float or Var):
-            mean value of the random gauss
-        std (int or float or Var):
-            std value of the random gauss
-
-    Example::
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.gauss_(linear.weight, 0.0, 1.0)
-        print(linear.weight)
-        linear.weight.gauss_(0.0, 1.0) # This is ok too
-
-    '''
+    "\n原地修改张量 ``var`` ，将其数值填充满足以均值为 ``mean`` 和标准差为 ``std`` 的高斯分布（正态分布）的随机数。\n\n    .. math::\n        out_i \\sim \\mathcal{N}(mean, std^2)\n\n    参数：\n        - var (Var): Var类型的张量\n        - mean (float or Var, optional): 高斯分布的均值， 默认值为0.0\n        - std (float or Var, optional): 高斯分布的标准差，默认值为1.0\n        \n    代码示例：\n        >>> x = init.zero((3,3))\n        >>> x\n        jt.Var([[0. 0. 0.]\n                [0. 0. 0.]\n                [0. 0. 0.]], dtype=float32)\n        >>> init.gauss_(x, 0, 5.0)\n        >>> x\n        jt.Var([[-0.34221977 -8.056475    2.6251674 ]\n                [-0.81275284  2.00393    -2.4397573 ]\n                [ 0.7867035  -8.159389    7.100675  ]], dtype=float32)\n        \n    返回值：\n        就地修改张量 ``var`` ，返回一个数值符合高斯分布的张量\n\n"
     return var.assign(gauss(var.shape, var.dtype, mean, std))
 Var.gauss_ = gauss_
 Var.normal_ = gauss_
@@ -677,33 +441,12 @@ def calculate_gain(nonlinearity, param=None):
 
 def trunc_normal_(var, mean=0., std=1., a=-2., b=2.):
     # type: (jt.jittor_core.Var, float, float, float, float) -> jt.jittor_core.Var
-    r"""Fills the input jt.jittor_core.Var with values drawn from a truncated
-    normal distribution. The values are effectively drawn from the
-    normal distribution :math:`\mathcal{N}(\text{mean}, \text{std}^2)`
-    with values outside :math:`[a, b]` redrawn until they are within
-    the bounds. The method used for generating the random values works
-    best when :math:`a \leq \text{mean} \leq b`.
-    Args:
-        var: an n-dimensional `jt.jittor_core.Var` 
-        mean: the mean of the normal distribution
-        std: the standard deviation of the normal distribution
-        a: the minimum cutoff value
-        b: the maximum cutoff value
-    Examples:
-
-        from jittor import init
-        from jittor import nn
-        linear = nn.Linear(2,2)
-        init.trunc_normal_(linear.weight, std=.02)
-        print(linear.weight)
-        linear.weight.trunc_normal_(std=.02) # This is ok too
-    """
+    "\n将输入的 :math:`jt.jittor\\_core.Var` 用一个截断正态分布中的值填充。这些值实际上是从正态分布 :math:`\\mathcal{N}(\\text{mean}, \\text{std}^2)` 中抽取的，其中超出 :math:`[a, b]` 范围的值会被重新抽取，直到他们在这个范围之内。生成随机值的方法在 :math:`a \\leq \\text{mean} \\leq b` 这个条件下工作得最好。\n\n    具体而言，:math:`trunc\\_normal\\_` 函数采样的方法如下： 首先，根据指定的均值 ``mean`` 和标准差 ``std`` ，从正态分布中采样一个随机值 :math:`x` 。然后，对采样的随机值 :math:`x` 进行截断操作，将其限制在指定的范围[ ``a`` ,  ``b`` ]内。具体而言，如果  :math:`x` 小于下界 ``a`` ，则将它替换为 ``a`` ；如果x大于上界 ``b``，则将它替换为 ``b``。最后，将截断后的值作为初始化值赋给张量 ``var`` 的对应元素。\n\n    参数:\n        - var (jt.jittor_core.Var): 一个n维的变量\n        - mean (float， 可选): 正态分布的均值，默认值：0.0\n        - std (float， 可选): 正态分布的标准差，默认值：1.0\n        - a (float， 可选): 最小截断值，默认值：-2.0\n        - b (float， 可选): 最大截断值，默认值：2.0\n\n    代码示例:\n        >>> from jittor import init\n        >>> from jittor import nn\n        >>> linear = nn.Linear(2,2)\n        >>> init.trunc_normal_(linear.weight, std=.02)\n        >>> linear.weight    \n  \n    返回值：\n        使用截断正态分布填充的输入变量(Var)\n\n\n"
     return var.assign(_no_grad_trunc_normal_(var, mean, std, a, b))
 Var.trunc_normal_ = trunc_normal_
 
 def _no_grad_trunc_normal_(var, mean, std, a, b):
-    # Cut & paste from PyTorch official master until it's in a few official releases - RW
-    # Method based on https://people.sc.fsu.edu/~jburkardt/presentations/truncated_normal.pdf
+    "\n使用截断正态分布初始化给定变量的值。与 :math:`trunc\\_normal\\_` 函数不同的是，该函数在执行初始化时不会进行梯度计算，即不会自动记录梯度。\n\n    该函数使用均值为 ``mean`` , 标准差为 ``std`` , 上下限为 ``a`` ,  ``b`` 的截断正态分布初始化给定的变量 ``var`` .当均值 ``mean`` 超出 ``[a-2*std, b+2*std]`` 的范围时，会弹出警告提示。\n\n    在数学上，截断正态分布的累积分布函数为 :math:`F(x)=\\frac{1+\\text{erf}(x / \\sqrt{2})}{2}`。\n\n    参数:\n        - var (jt.Var): 要初始化的变量。\n        - mean (float): 截断正态分布的均值。\n        - std (float): 截断正态分布的标准差。\n        - a (float): 截断正态分布的下界。\n        - b (float): 截断正态分布的上界。\n\n    返回值:\n        初始化后的变量(Var)。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> var = jt.zeros([3, 3])\n        >>> var = jt._no_grad_trunc_normal_(var, mean=0., std=1., a=-2., b=2.)\n\n"
     def norm_cdf(x):
         # Computes standard normal cumulative distribution function
         return (1. + math.erf(x / math.sqrt(2.))) / 2.

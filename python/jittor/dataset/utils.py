@@ -18,6 +18,7 @@ def get_random_list(n):
     return list(np.random.permutation(range(n)))
 
 def get_order_list(n):
+    "\n这个函数将生成一个从0到n-1的顺序整数列表。\n\n    参数:\n        - n (int): 列表的元素个数，范围从0开始。\n\n    返回值:\n        list: 一个包含从0到n-1的整数的列表\n\n    代码示例：\n        >>> import jittor as jt\n        >>> jt.dataset.utils.get_order_list(5) \n        [0, 1, 2, 3, 4]\n\n"
     return [i for i in range(n)]
 
 

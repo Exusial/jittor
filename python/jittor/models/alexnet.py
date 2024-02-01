@@ -14,19 +14,7 @@ import jittor.nn as nn
 __all__ = ['AlexNet', 'alexnet']
 
 class AlexNet(nn.Module):
-    """ AlexNet model architecture.
-
-    Args:
-
-    * num_classes: Number of classes. Default: 1000.
-
-    Example::
-    
-        model = jittor.models.AlexNet(500)
-        x = jittor.random([10,3,224,224])
-        y = model(x) # [10, 500]
-
-    """
+    "\n构建一个alexnet模型\n\n    AlexNet源自于论文[ImageNet Classification with Deep Convolutional Neural Networks](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf) 。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): alexnet模型的其他参数。默认为 `None\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.alexnet import *\n        >>> net = alexnet(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的alexnet模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
 
     def __init__(self, num_classes=1000):
         super(AlexNet, self).__init__()
@@ -63,6 +51,7 @@ class AlexNet(nn.Module):
         return x
 
 def alexnet(pretrained=False, **kwargs):
+    "\n构建一个alexnet模型\n\n    AlexNet源自于论文[ImageNet Classification with Deep Convolutional Neural Networks](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf) 。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): alexnet模型的其他参数。默认为 `None\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.alexnet import *\n        >>> net = alexnet(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的alexnet模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = AlexNet(**kwargs)
     if pretrained: model.load("jittorhub://alexnet.pkl")
     return model

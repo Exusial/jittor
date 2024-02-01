@@ -15,12 +15,7 @@ from collections import OrderedDict
 
 
 def densenet121(pretrained=False, **kwargs):
-    '''Densenet-121 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-    
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    '''
+    "\n构建一个Densenet201模型\n\n    Densenet源自论文 [Densely Connected Convolutional Networks](https://arxiv.org/pdf/1608.06993.pdf)。Densenet201通过密集连接方式增强特征传播，减少参数数量，并提高网络性能。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs`: 可变参数，用于传递额外的配置选项。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.densenet import *\n        >>> net = densenet201(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Densenet201模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16), **kwargs)
     if pretrained: model.load("jittorhub://densenet121.pkl")
     return model

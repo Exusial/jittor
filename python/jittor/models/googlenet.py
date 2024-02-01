@@ -19,15 +19,7 @@ def googlenet(pretrained=False, **kwargs):
     return model
 
 class GoogLeNet(nn.Module):
-    """ GoogLeNet model architecture.
-
-    Args:
-
-    * num_classes: Number of classes. Default: 1000.
-    * aux_logits: If True, add an auxiliary branch that can improve training. Default: True
-    * init_weights: Defualt: True.
-    * blocks: List of three blocks, [conv_block, inception_block, inception_aux_block]. If None, will use [BasicConv2d, Inception, InceptionAux] instead. Default: None.
-    """
+    "\n构建一个googlenet模型\n\n    googlenet源自于论文 [Going Deeper with Convolutions](https://arxiv.org/abs/1409.4842)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.googlenet import *\n        >>> net = googlenet(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的googlenet模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
 
     def __init__(self, num_classes=1000, aux_logits=True, init_weights=True, blocks=None):
         super(GoogLeNet, self).__init__()

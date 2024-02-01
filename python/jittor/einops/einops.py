@@ -420,60 +420,7 @@ def reduce(tensor: Tensor, pattern: str, reduction: Reduction, **axes_lengths: i
 
 
 def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths) -> Tensor:
-    """
-    einops.rearrange is a reader-friendly smart element reordering for multidimensional tensors.
-    This operation includes functionality of transpose (axes permutation), reshape (view), squeeze, unsqueeze,
-    stack, concatenate and other operations.
-
-    Examples for rearrange operation:
-
-    ```python
-    # suppose we have a set of 32 images in "h w c" format (height-width-channel)
-    >>> images = [np.random.randn(30, 40, 3) for _ in range(32)]
-
-    # stack along first (batch) axis, output is a single array
-    >>> rearrange(images, 'b h w c -> b h w c').shape
-    (32, 30, 40, 3)
-
-    # concatenate images along height (vertical axis), 960 = 32 * 30
-    >>> rearrange(images, 'b h w c -> (b h) w c').shape
-    (960, 40, 3)
-
-    # concatenated images along horizontal axis, 1280 = 32 * 40
-    >>> rearrange(images, 'b h w c -> h (b w) c').shape
-    (30, 1280, 3)
-
-    # reordered axes to "b c h w" format for deep learning
-    >>> rearrange(images, 'b h w c -> b c h w').shape
-    (32, 3, 30, 40)
-
-    # flattened each image into a vector, 3600 = 30 * 40 * 3
-    >>> rearrange(images, 'b h w c -> b (c h w)').shape
-    (32, 3600)
-
-    # split each image into 4 smaller (top-left, top-right, bottom-left, bottom-right), 128 = 32 * 2 * 2
-    >>> rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape
-    (128, 15, 20, 3)
-
-    # space-to-depth operation
-    >>> rearrange(images, 'b (h h1) (w w1) c -> b h w (c h1 w1)', h1=2, w1=2).shape
-    (32, 15, 20, 12)
-
-    ```
-
-    When composing axes, C-order enumeration used (consecutive elements have different last axis)
-    Find more examples in einops tutorial.
-
-    Parameters:
-        tensor: tensor of any supported library (e.g. numpy.ndarray, jittor.Var).
-                list of tensors is also accepted, those should be of the same type and shape
-        pattern: string, rearrangement pattern
-        axes_lengths: any additional specifications for dimensions
-
-    Returns:
-        tensor of the same type as input. If possible, a view to the original tensor is returned.
-
-    """
+    "\neinops.rearrange 是对多维张量进行智能、易读的元素重排的操作。此操作包括转置（轴置换）、重塑（视图）、挤压、展开、堆叠、连接等操作。\n\n    参数:\n        - `tensor` (Union[Var, List[Var]]): 支持的任何库（例如 numpy.ndarray, jittor.Var）的张量，或相同类型和形状的张量列表。\n        - `pattern` (str): 重排模式的字符串描述。\n        - `axes_lengths`: 对维度的额外说明，可选。\n\n    返回值:\n        返回与输入相同类型的张量。尽可能返回原始张量的视图。\n\n    代码示例:\n        >>> from jittor import einops \n        >>> import numpy as np\n        # 假设有32张 30x40x3 大小的图像\n        >>> images = [np.random.randn(30, 40, 3) for _ in range(32)]\n        # 沿批量轴堆叠，输出单一数组\n        >>> einops.rearrange(images, 'b h w c -> b h w c').shape\n        (32, 30, 40, 3)\n        # 沿高度轴拼接，输出 960x40x3\n        >>> einops.rearrange(images, 'b h w c -> (b h) w c').shape\n        (960, 40, 3)\n        # 沿宽度轴拼接，输出 30x1280x3\n        >>> einops.rearrange(images, 'b h w c -> h (b w) c').shape\n        (30, 1280, 3)\n        # 轴重排为 'b c h w' 格式\n        >>> einops.rearrange(images, 'b h w c -> b c h w').shape\n        (32, 3, 30, 40)\n        # 每个图像展平为矢量，输出 32x3600\n        >>> einops.rearrange(images, 'b h w c -> b (c h w)').shape\n        (32, 3600)\n        # 将图像分为4个较小的(左上、右上、左下、右下)部分，输出 128x15x20x3\n        >>> einops.rearrange(images, 'b (h1 h) (w1 w) c -> (b h1 w1) h w c', h1=2, w1=2).shape\n        (128, 15, 20, 3)\n\n\n"
     if isinstance(tensor, list):
         if len(tensor) == 0:
             raise TypeError("Rearrange can't be applied to an empty list")
@@ -482,52 +429,7 @@ def rearrange(tensor: Union[Tensor, List[Tensor]], pattern: str, **axes_lengths)
 
 
 def repeat(tensor: Tensor, pattern: str, **axes_lengths) -> Tensor:
-    """
-    einops.repeat allows reordering elements and repeating them in arbitrary combinations.
-    This operation includes functionality of repeat, tile, broadcast functions.
-
-    Examples for repeat operation:
-
-    ```python
-    # a grayscale image (of shape height x width)
-    >>> image = np.random.randn(30, 40)
-
-    # change it to RGB format by repeating in each channel
-    >>> repeat(image, 'h w -> h w c', c=3).shape
-    (30, 40, 3)
-
-    # repeat image 2 times along height (vertical axis)
-    >>> repeat(image, 'h w -> (repeat h) w', repeat=2).shape
-    (60, 40)
-
-    # repeat image 2 time along height and 3 times along width
-    >>> repeat(image, 'h w -> (h2 h) (w3 w)', h2=2, w3=3).shape
-    (60, 120)
-
-    # convert each pixel to a small square 2x2. Upsample image by 2x
-    >>> repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
-    (60, 80)
-
-    # pixelate image first by downsampling by 2x, then upsampling
-    >>> downsampled = reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)
-    >>> repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape
-    (30, 40)
-
-    ```
-
-    When composing axes, C-order enumeration used (consecutive elements have different last axis)
-    Find more examples in einops tutorial.
-
-    Parameters:
-        tensor: tensor of any supported library (e.g. numpy.ndarray, jittor.Var).
-            list of tensors is also accepted, those should be of the same type and shape
-        pattern: string, rearrangement pattern
-        axes_lengths: any additional specifications for dimensions
-
-    Returns:
-        Tensor of the same type as input. If possible, a view to the original tensor is returned.
-
-    """
+    "\nrepeat 函数允许以任意组合的方式重新排序和重复元素。该操作包括 repeat、tile 和 broadcast 函数的功能。\n\n    参数:\n        - `tensor` (Union[Var, List[Var]]): 支持的任何库（例如 numpy.ndarray, jittor.Var）的张量，或相同类型和形状的张量列表。\n        - `pattern` (str): 重排模式的字符串描述。\n        - `axes_lengths`: 维度的额外规格说明。\n\n    返回值:\n        - 返回与输入相同类型的张量。如果可能，返回指向原始张量的视图。\n\n    代码示例:\n        >>> from jittor import einops \n        >>> import numpy as np\n        # 灰度图像（30x40）\n        >>> image = np.random.randn(30, 40)\n        # 转换为 RGB 格式\n        >>> einops.repeat(image, 'h w -> h w c', c=3).shape\n        (30, 40, 3)\n        # 沿高度轴重复 2 次\n        >>> einops.repeat(image, 'h w -> (repeat h) w', repeat=2).shape\n        (60, 40)\n        # 沿高度和宽度分别重复 2 次和 3 次\n        >>> einops.repeat(image, 'h w -> (h2 h) (w3 w)', h2=2, w3=3).shape\n        (60, 120)\n        # 放大图像 2 倍\n        >>> einops.repeat(image, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape\n        (60, 80)\n        # 缩小后放大图像\n        >>> downsampled = einops.reduce(image, '(h h2) (w w2) -> h w', 'mean', h2=2, w2=2)\n        >>> einops.repeat(downsampled, 'h w -> (h h2) (w w2)', h2=2, w2=2).shape\n        (30, 40)\n\n\n"
     return reduce(tensor, pattern, reduction='repeat', **axes_lengths)
 
 
@@ -705,67 +607,7 @@ def einsum(tensor1: Tensor, tensor2: Tensor, tensor3: Tensor, tensor4: Tensor, p
 
 
 def einsum(*tensors_and_pattern: List[Union[Tensor, str]]) -> Tensor:
-    """
-    einops.einsum calls einsum operations with einops-style named
-    axes indexing, computing tensor products with an arbitrary
-    number of tensors. Unlike typical einsum syntax, here you must
-    pass tensors first, and then the pattern.
-
-    Also, note that rearrange operations such as `"(batch chan) out"`,
-    or singleton axes `()`, are not currently supported.
-
-    Examples:
-
-    For a given pattern such as:
-    ```python
-    >>> x, y, z = np.random.randn(3, 20, 20, 20)
-    >>> output = einsum(x, y, z, "a b c, c b d, a g k -> a b k")
-
-    ```
-    the following formula is computed:
-    ```tex
-    output[a, b, k] = 
-        \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]
-    ```
-    where the summation over `c`, `d`, and `g` is performed
-    because those axes names do not appear on the right-hand side.
-
-    Let's see some additional examples:
-    ```python
-    # Filter a set of images:
-    >>> batched_images = np.random.randn(128, 16, 16)
-    >>> filters = np.random.randn(16, 16, 30)
-    >>> result = einsum(batched_images, filters,
-    ...                 "batch h w, h w channel -> batch channel")
-    >>> result.shape
-    (128, 30)
-
-    # Matrix multiplication, with an unknown input shape:
-    >>> batch_shape = (50, 30)
-    >>> data = np.random.randn(*batch_shape, 20)
-    >>> weights = np.random.randn(10, 20)
-    >>> result = einsum(weights, data,
-    ...                 "out_dim in_dim, ... in_dim -> ... out_dim")
-    >>> result.shape
-    (50, 30, 10)
-
-    # Matrix trace on a single tensor:
-    >>> matrix = np.random.randn(10, 10)
-    >>> result = einsum(matrix, "i i ->")
-    >>> result.shape
-    ()
-
-    ```
-
-    Parameters:
-        tensors: tensors of any supported library (numpy, jittor).
-        pattern: string, einsum pattern, with commas
-                 separating specifications for each tensor.
-
-    Returns:
-        Tensor of the same type as input, after processing with einsum.
-
-    """
+    "\neinops 风格命名的轴索引调用 einsum 运算，允许与任意数量的张量计算张量乘积。与典型的 einsum 语法不同，在这里您必须先传入张量，然后传入模式。\n\n    参数:\n        - `tensors_and_pattern` (List[Union[Var, str]]): 支持的库（如 numpy, jittor）的张量列表以及 einsum 模式字符串。\n\n    返回值:\n        - 经过 einsum 处理后的同类型张量。\n    \n    代码示例:\n        >>> import numpy as np\n        >>> from jittor.einops import einops\n        # 假设有三个 20x20x20 的张量 x, y, z\n        >>> x, y, z = np.random.randn(3, 20, 20, 20)\n        >>> output = einops.einsum(x, y, z, \"a b c, c b d, a g k -> a b k\")\n        >>> output.shape\n        (3, 20, 20)\n        \n        # 过滤一组图像\n        >>> batched_images = np.random.randn(128, 16, 16)\n        >>> filters = np.random.randn(16, 16, 30)\n        >>> result = einops.einsum(batched_images, filters, \"batch h w, h w channel -> batch channel\")\n        >>> result.shape\n        (128, 30)\n\n        # 矩阵乘法，未知输入形状\n        >>> batch_shape = (50, 30)\n        >>> data = np.random.randn(*batch_shape, 20)\n        >>> weights = np.random.randn(10, 20)\n        >>> result = einops.einsum(weights, data, \"out_dim in_dim, ... in_dim -> ... out_dim\")\n        >>> result.shape\n        (50, 30, 10)\n\n        # 单个张量的矩阵迹\n        >>> matrix = np.random.randn(10, 10)\n        >>> result = einops.einsum(matrix, \"i i -> \")\n\n\n"
     if len(tensors_and_pattern) <= 1:
         raise ValueError(
             "`einops.einsum` takes at minimum two arguments: the tensors (at least one),"

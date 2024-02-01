@@ -157,31 +157,21 @@ class Res2Net(nn.Module):
 
 
 def res2net50(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50 model.
-    Res2Net-50 refers to the Res2Net-50_26w_4s.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net50模型\n\n    Res2Net50是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net50(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 6, 3], baseWidth = 26, scale = 4, **kwargs)
     if pretrained:
         model.load(model_urls['res2net50_26w_4s'])
     return model
 
 def res2net50_26w_4s(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50_26w_4s model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net50_26w_4s模型\n\n    Res2Net50_26w_4s是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net50_26w_4s(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net_26w_4s模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 6, 3], baseWidth = 26, scale = 4, **kwargs)
     if pretrained:
         model.load(model_urls['res2net50_26w_4s'])
     return model
 
 def res2net101_26w_4s(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50_26w_4s model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net101_26w_4s模型\n\n    Res2Net101_26w_4s是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net101_26w_4s(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net101_26w_4s模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 23, 3], baseWidth = 26, scale = 4, **kwargs)
     if pretrained:
         model.load(model_urls['res2net101_26w_4s'])
@@ -190,40 +180,28 @@ def res2net101_26w_4s(pretrained=False, **kwargs):
 res2net101 = res2net101_26w_4s
 
 def res2net50_26w_6s(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50_26w_4s model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net50_26w_6s模型\n\n    Res2Net50_26w_6s是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net50_26w_6s(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net50_26w_6s模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 6, 3], baseWidth = 26, scale = 6, **kwargs)
     if pretrained:
         model.load(model_urls['res2net50_26w_6s'])
     return model
 
 def res2net50_26w_8s(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50_26w_4s model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net50_26w_8s模型\n\n    Res2Net50_26w_8s是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net50_26w_8s(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net50_26w_8s模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 6, 3], baseWidth = 26, scale = 8, **kwargs)
     if pretrained:
         model.load(model_urls['res2net50_26w_8s'])
     return model
 
 def res2net50_48w_2s(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50_48w_2s model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net50_48w_2s模型\n\n    Res2Net50_48w_2s是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net50_48w_2s(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net50_48w_2s模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 6, 3], baseWidth = 48, scale = 2, **kwargs)
     if pretrained:
         model.load(model_urls['res2net50_48w_2s'])
     return model
 
 def res2net50_14w_8s(pretrained=False, **kwargs):
-    """Constructs a Res2Net-50_14w_8s model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-    """
+    "\n构建一个Res2Net50_14w_8s模型\n\n    Res2Net50_14w_8s是Res2Net模型的一种变体，来自于[Res2Net: A New Multi-scale Backbone Architecture](https://arxiv.org/abs/1904.01169)。\n\n    参数:\n        - `pretrained` (bool, 可选): 如果为 `True`，返回一个在ImageNet上预训练的模型。默认为 `False`。\n        - `**kwargs` (dict, 可选): 用于传递额外的关键字参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.res2net import *\n        >>> net = res2net50_14w_8s(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回构建好的Res2Net50_14w_8s模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n"
     model = Res2Net(Bottle2neck, [3, 4, 6, 3], baseWidth = 14, scale = 8, **kwargs)
     if pretrained:
         model.load(model_urls['res2net50_14w_8s'])

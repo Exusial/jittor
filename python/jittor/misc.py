@@ -14,15 +14,34 @@ import math
 from collections.abc import Sequence,Iterable
 
 def knn(unknown, known, k):
-    ''' find k neighbors for unknown array from known array
-
-    Args:
-        
-        unknown (var): shape [b, n, c]
-        known (var): shape [b, m, c]
-        k (int)
-
     '''
+对未知向量寻找与已知向量里中的欧氏距离最近的 ``k`` 个向量
+
+    参数：
+        - unknown (Var): 形状 ``(b, n, c)`` ，其中 ``b`` 是批次数， ``n`` 是每批次未知向量个数， ``c`` 是每个向量维数
+        - known (Var): 形状 ``(b, m, c)`` ，其中 ``b`` 和 ``c`` 上同， ``m`` 是每批次已知向量个数
+        - k (int): 对于每个未知向量寻找多少个最近向量
+
+    返回值：
+        - ``tuple[Var, Var]`` ，其中第一个元素是形状 ``(b, n, k)`` 表示对每个未知向量，在当前批次中找到的最近 ``k`` 个已知向量的欧式距离的平方，第二个元素是形状 ``(b, n, k)`` 表示找到最近向量的下标
+
+    代码示例：
+        >>> unknown = jt.randn(1, 4, 3)
+        >>> known = jt.randn(1, 10, 3)
+        >>> jt.knn(unknown, known, 2)
+        (jt.Var([[[0.04125667 1.0006377 ]
+                  [1.2794693  2.05327   ]
+                  [1.4255599  3.4547305 ]
+                  [0.849751   1.5978208 ]]], dtype=float32),
+         jt.Var([[[8 4]
+                  [9 4]
+                  [4 8]
+                  [1 3]]], dtype=int32))
+
+    这个函数只在 ``c`` 为 3 的时候正确工作。
+
+
+'''
     b, n, c = unknown.shape
     _, m, _ = known.shape
     dists2 = jt.empty((b, n, k), dtype="float")
@@ -86,22 +105,28 @@ void knn_kernel(int b, int batch_index, int n, int index, int m,
     cuda_src=src)
 
 def index_add_(x, dim, index, tensor):
-    """ Take out each index subscript vector of the dim dimension and add the corresponding tensor variable.
-    
-    Example:
+    '''
+对于 ``index`` 中的每个下标和 ``tensor`` 里对应的每个张量，在 ``x`` 的 ``dim`` 维对应的下标处加上这个张量
 
-        x = jt.ones((5,3))
-        tensor = jt.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        index = jt.array([0,4,2])
-        x.index_add_(0, index, tensor)
-        print(x)
+    参数：
+        - x (Var): 形状 ``(..., k, ...)``
+        - dim (int): 上面 ``x`` 中 ``k`` 对应的是第几维
+        - index (Var): 形状 ``(n)`` 选取要加上张量的下标
+        - tensor (Var): 形状 ``(n, ..., ...)`` 每个下标处要加上的张量
 
-        >>> jt.Var([[  2.,   3.,   4.],
-        [  1.,   1.,   1.],
-        [  8.,   9.,  10.],
-        [  1.,   1.,   1.],
-        [  5.,   6.,   7.]])
-    """
+    代码示例：
+        >>> x = jt.ones(2, 3, 4)
+        >>> jt.index_add_(x, 0, jt.array([0, 1]), jt.array([jt.ones(3, 4), jt.ones(3, 4) * 2]))
+        >>> jt.index_add_(x, 1, jt.array([0, 1]), jt.array([jt.ones(2, 4), jt.ones(2, 4) * 2]))
+        >>> x
+        jt.Var([[[3. 3. 3. 3.]
+                 [3. 3. 3. 3.]
+                 [2. 2. 2. 2.]]
+                [[5. 5. 5. 5.]
+                 [5. 5. 5. 5.]
+                 [3. 3. 3. 3.]]], dtype=float32)
+
+'''
     assert len(index.shape) == 1
     assert tensor.shape[0] == index.shape[0]
     x[(slice(None,),)*dim+(index,)] += tensor
@@ -133,6 +158,7 @@ def __contains__(x, key):
 jt.Var.__contains__ = __contains__
 
 def new(x, *args):
+    "\n创建一个和 ``x`` 类型相同的张量\n\n    参数：\n        - x (Var): 一个张量\n        - a (Var): 待转换类型的张量\n       \n       或者\n        \n        - x (Var): 原张量\n        - n1, n2, ... (int): 新张量每维的长度\n\n    返回值：\n        如果给的参数是一个张量，则将其转换为和 ``x`` 类型相同的张量；否则新创建一个给定形状，类型与 ``x`` 相同的未初始化张量\n\n    代码示例：\n        >>> x = jt.array([1.0, 2.0, 3.0])\n        >>> x\n        jt.Var([1. 2. 3.], dtype=float32)\n        >>> x.new(3, 4)\n        jt.Var([[-0.62324923  0.81981313  0.49348482 -0.80826735]\n                [-2.185655   -0.12619412 -0.36160922 -0.28803992]\n                [-1.3812838  -0.3991161   0.9999802  -0.11363947]], dtype=float32)\n        >>> a = jt.array([4, 5])\n        >>> a\n        jt.Var([4 5], dtype=int32)\n        >>> x.new(a)\n        jt.Var([4. 5.], dtype=float32)\n\n"
     if len(args) != 1 or isinstance(args[0], int):
         return jt.empty(args, x.dtype)
     return jt.array(args[0]).cast(x.dtype)
@@ -143,19 +169,23 @@ def __index__(x):
 jt.Var.__index__ = __index__
 
 def sort(input, dim=-1, descending=False, stable=False):
+    "\n对输入张量 ``input`` 沿着指定维按升序非稳定排序。如果不给定 ``dim`` ，则默认为输入的最后一维。如果指定参数 ``descending`` 为 ``True`` ，则按降序排序。如果指定参数``stable`` 为 ``True`` ，则为稳定排序。\n\n    参数：\n        - input (Var): 要对比的张量\n        - dim (int, optional): 沿着此维排序，默认为最后一维\n        - descending (bool, optional): 布尔值，控制升降排序，默认为升序\n        - stable(bool, optional): 布尔值，控制稳定排序，默认非稳定排序\n\n    代码示例：\n\n    >>> x = jt.random((3, 4))\n    jt.Var([[ 0.25843996 0.6806731 0.48188502 -0.8385996 ]\n    [-0.97904104 -1.0399561 -0.97162217 3.834338 ]\n    [-0.6144879 -0.97539455 -0.81440794 -0.12566419]], dtype=float32)\n    >>> value, index = jt.sort(x)\n    >>> value\n    jt.Var([[-0.8385996 0.25843996 0.48188502 0.6806731 ]\n    [-1.0399561 -0.97904104 -0.97162217 3.834338 ]\n    [-0.97539455 -0.81440794 -0.6144879 -0.12566419]], dtype=float32)\n    >>> index\n    jt.Var([[3 0 2 1]\n    [1 0 2 3]\n    [1 2 0 3]], dtype=int32)\n\n    返回值：\n        返回元组 (value, index) ， ``index`` 为原始输入中的下标。\n   \n \n"
     index, value = jt.argsort(input, dim, descending)
     return value, index
 jt.Var.sort = sort
 
 def all(x, dim=()):
+    "\n在指定维度上计算逻辑与\n\n    参数：\n        - x (Var): 被计算逻辑与的张量\n        - dim (int | tuple[int, ...]): 计算逻辑与的维度，默认为全部维度，即全部元素逻辑与得到一个元素\n\n    返回值：\n        计算逻辑与的结果，形状为 ``x`` 去掉 ``dim`` 所选维度，元素类型为 ``bool``\n\n    代码示例：\n        >>> x = jt.randn(2, 3) > 0\n        >>> x\n        jt.Var([[ True  True False]\n                [ True False  True]], dtype=bool)\n        >>> jt.all(x)\n        jt.Var([False], dtype=bool)\n        >>> jt.all(x, 0)\n        jt.Var([ True False False], dtype=bool)\n        >>> jt.all(x, 1)\n        jt.Var([False False], dtype=bool)\n\n"
     return x.all_(dim).bool()
 jt.Var.all = all
 
 def any(x,dim=()):
+    "\n\n在指定维度上计算逻辑或\n\n    参数：\n        - x (Var): 被计算逻辑或的张量\n        - dim (int | tuple[int, ...]): 计算逻辑或的维度，默认为全部维度，即全部元素逻辑或得到一个元素\n\n    返回值：\n        计算逻辑或的结果，形状为 ``x`` 去掉 ``dim`` 所选维度，元素类型为 ``bool``\n\n    代码示例：\n        >>> x = jt.randn(2, 3) > 0\n        >>> x\n        jt.Var([[ True False  True]\n                [False False  True]], dtype=bool)\n        >>> jt.any(x)\n        jt.Var([ True], dtype=bool)\n        >>> jt.any(x, 0)\n        jt.Var([ True False  True], dtype=bool)\n        >>> jt.any(x, 1)\n        jt.Var([ True  True], dtype=bool)\n\n"
     return x.any_(dim).bool()
 jt.Var.any = any
     
 def bernoulli(input):
+    "\n对于每个元素 ``p`` ，返回概率为 ``p`` 的伯努利分布的随机值：\n\n    .. math::\n        \\begin{cases}\n        1 & \\text{ with probability } p \\\\\n        0 & \\text{ with probability } (1 - p)\n        \\end{cases}\n\n    参数：\n        - input (Var): 每个采样所用的概率 ``p``\n\n    返回值：\n        形状与数据类型和 ``input`` 一样的张量，原张量中每个元素 ``p`` 对应返回值里的元素，以概率 ``p`` 为 1，概率 ``1 - p`` 为 0\n\n    代码示例：\n        >>> x = jt.array([0.0, 0.5, 1.0])\n        >>> jt.bernoulli(x)\n        jt.Var([0. 0. 1.], dtype=float32)\n        >>> jt.bernoulli(x)\n        jt.Var([0. 0. 1.], dtype=float32)\n        >>> jt.bernoulli(x)\n        jt.Var([0. 1. 1.], dtype=float32)\n\n"
     return (input>jt.rand_like(input)).cast(input.dtype)
 
 def repeat(x, *shape):
@@ -215,7 +245,7 @@ jt.Var.repeat = repeat
 ne = jt.Var.ne = jt.Var.not_equal
 
 def repeat_interleave(x,repeats,dim=None):
-    # TODO repeats is jt.Var
+    "\n将张量在某个维度上每个元素重复多次\n\n    参数：\n        - x (Var): 被重复的张量，形状 :math:`(n_0, \\ldots, n_{\\mathtt{dim}}, \\ldots, n_k)`\n        - repeats (int): 每个元素重复的次数\n        - dim (int): 在哪个维度上重复，负数表示从后往前数。默认为将向量扁平化后重复\n\n    返回值：\n        ``x`` 在 ``dim`` 维度每个元素重复 ``repeat`` 次得到的向量，形状 :math:`(n_0, \\ldots, n_{\\mathtt{dim}} * \\mathtt{repeats}, \\ldots, n_k)`\n\n    示例代码：\n        >>> x = jt.array([[1, 2], [3, 4]])\n        >>> x.repeat_interleave(2, 0)\n        jt.Var([[1 2]\n                [1 2]\n                [3 4]\n                [3 4]], dtype=int32)\n        >>> x.repeat_interleave(2, 1)\n        jt.Var([[1 1 2 2]\n                [3 3 4 4]], dtype=int32)\n        >>> x.repeat_interleave(2)\n        jt.Var([1 1 2 2 3 3 4 4], dtype=int32)\n\n"
     assert isinstance(repeats,int)
     if dim == None:
         x = x.reshape(-1)
@@ -236,28 +266,7 @@ def repeat_interleave(x,repeats,dim=None):
 jt.Var.repeat_interleave = repeat_interleave
 
 def chunk(x, chunks, dim=0):
-    r'''
-    Splits a var into a specific number of chunks. Each chunk is a view of the input var.
-
-    Last chunk will be smaller if the var size along the given dimension dim is not divisible by chunks.
-
-    Args:
-
-        input (var) – the var to split.
-
-        chunks (int) – number of chunks to return.
-
-        dim (int) – dimension along which to split the var.
-
-    Example:
-
-        >>> x = jt.random((10,3,3))
-
-        >>> res = jt.chunk(x, 2, 0)
-
-        >>> print(res[0].shape, res[1].shape)
-        [5,3,3,] [5,3,3,]
-    '''
+    "\n将张量在 ``dim`` 维度切分为 ``chunks`` 块\n\n    切块尽量均匀。如果 ``x`` 在 ``dim`` 维的长度不是 ``chunks`` 的整倍数，最后一个块的长度会小于之前块的长度。如果无法切分出 ``chunks`` 个非空的块，则会返回少于 ``chunks`` 个块。\n\n    参数：\n        - x (Var): 被切块的张量，形状 :math:`(n_0, \\ldots, n_{\\mathtt{dim}}, \\ldots, n_k)`\n        - chunks (int): 切成的块数\n        - dim (int): 在哪个维度切块，负数表示从后往前数。默认值：0\n\n    返回值：\n        ``list[Var]`` 为切块后按顺序得到的各个块组成的列表。\n\n    示例代码：\n        >>> x = jt.arange(10)\n        >>> x.chunk(2)\n        [jt.Var([0 1 2 3 4], dtype=int32), jt.Var([5 6 7 8 9], dtype=int32)]\n        >>> x.chunk(4)\n        [jt.Var([0 1 2], dtype=int32),\n         jt.Var([3 4 5], dtype=int32),\n         jt.Var([6 7 8], dtype=int32),\n         jt.Var([9], dtype=int32)]\n        >>> x.chunk(6)\n        [jt.Var([0 1], dtype=int32),\n         jt.Var([2 3], dtype=int32),\n         jt.Var([4 5], dtype=int32),\n         jt.Var([6 7], dtype=int32),\n         jt.Var([8 9], dtype=int32)]\n\n"
     if dim<0:
         dim += x.ndim
     l = x.shape[dim]
@@ -276,21 +285,35 @@ jt.Var.chunk = chunk
 
 
 def expand(x, *shape):
-    ''' Expand and broadcast this array, -1 represents this dimension is not changed.
-
-Example::
-
-    a = jt.zeros((3,1))
-    b = a.expand(3, 4)
-    assert b.shape == (3,4)
-    b = a.expand(-1, 4)
-    assert b.shape == (3,4)
-    b = a.expand((3, 4))
-    assert b.shape == (3,4)
-    b = a.expand((-1, 4))
-    assert b.shape == (3,4)
-
     '''
+扩展并广播一个张量到指定形状
+
+    指定的形状每一维必须为下列值之一
+
+    - ``-1`` 表示不改变这维度的长度
+    - 和 ``x`` 对应维长度一样，表示不改变这个维度的长度
+    - 新的长度，要求 ``x`` 对应维长度为 1，表示在这个维度上扩展
+
+    参数：
+        - x (Var): 被扩展的张量
+        - shape (tuple[int, ...]): 扩展到的形状
+        
+       或者
+
+        - x (Var): 被扩展的张量
+        - n0, n1, ... (int): 扩展到的形状
+
+    返回值：
+        扩展到指定形状的张量
+
+    示例代码：
+        >>> a = jt.zeros((3,1))
+        >>> a.expand(3, 4).shape
+        [3,4,]
+        >>> a.expand(-1, 4).shape
+        [3,4,]
+
+'''
     if len(shape) == 1 and isinstance(shape[0], (tuple,list,jt.NanoVector)):
         shape = shape[0]
     shape = list(shape)
@@ -302,6 +325,7 @@ jt.Var.expand = expand
 
 
 def t(x):
+    "\n转置张量的最后两个维度\n\n    参数：\n        - x (Var): 被转置的张量，形状 :math:`(n_0, n_1, \\ldots, n_{k - 3}, n_{k - 2}, n_{k - 1})`\n\n    返回值：\n        转置后的张量，形状 :math:`(n_0, n_1, \\ldots, n_{k - 3}, n_{k - 1}, n_{k - 2})`\n\n    示例代码：\n        >>> x = jt.array([[1, 2], [3, 4]])\n        >>> x.t()\n        jt.Var([[1 3]\n                [2 4]], dtype=int32)\n\n"
     pose = [i for i in range(x.ndim)]
     pose[-1], pose[-2] = pose[-2], pose[-1]
     return x.transpose(*pose)
@@ -324,27 +348,7 @@ def median(x,dim=None,keepdim=False, keepdims=False):
 jt.Var.median = median
 
 def stack(x, dim=0):
-    r'''
-    Concatenates sequence of vars along a new dimension.
-
-    All vars need to be of the same size.
-
-    Args:
-
-        x (sequence of vars) – sequence of vars to concatenate.
-
-        dim (int) – dimension to insert. Has to be between 0 and the number of dimensions of concatenated vars (inclusive).
-
-    Example:
-
-        >>> a1 = jt.array([[1,2,3]])
-
-        >>> a2 = jt.array([[4,5,6]])
-
-        >>> jt.stack([a1, a2], 0)
-        [[[1 2 3]
-        [[4 5 6]]]
-    '''
+    "\n将多个形状相同的张量组合成为一个更高维的张量\n\n    参数：\n        - x (list[Var]): 被组合的张量，每个形状相同，都是 :math:`(n_0, \\ldots, n_{\\mathtt{dim}}, \\ldots, n_k)`\n        - dim (int): 第几个维度前插入一个维度。默认值：0\n\n    返回值：\n        组合为的张量，形状 :math:`(n_0, \\ldots, n_{\\mathtt{dim} - 1}, \\mathtt{len(x)}, n_{\\mathtt{dim}}, \\ldots, n_k)`\n\n    示例代码：\n        >>> a = jt.array([1, 2, 3])\n        >>> b = jt.array([4, 5, 6])\n        >>> jt.stack([a, b])\n        jt.Var([[1 2 3]\n                [4 5 6]], dtype=int32)\n        >>> jt.stack([a, b], dim=1)\n        jt.Var([[1 4]\n                [2 5]\n                [3 6]], dtype=int32)\n\n"
     assert isinstance(x, Sequence)
     if len(x) < 2:
         return x[0].unsqueeze(dim)
@@ -354,22 +358,7 @@ def stack(x, dim=0):
 jt.Var.stack = stack
 
 def flip(x, dim=0):
-    r'''
-    Reverse the order of a n-D var along given axis in dims.
-
-    Args:
-
-        input (var) – the input var.
- 
-        dims (a list or tuple) – axis to flip on.
-
-    Example:
-
-        >>> x = jt.array([[1,2,3,4]])
-
-        >>> x.flip(1)
-        [[4 3 2 1]]
-    '''
+    "将张量在指定维度镜像翻转\n\n    参数：\n        - x (Var): 需要翻转的张量\n        - dim (int | tuple[int, ...]): 需要翻转的维度，负数表示从后往前数。默认值：0\n\n    返回值：\n        x 在指定维度翻转后的结果\n\n    代码示例：\n        >>> x = jt.array([[1, 2], [3, 4]])\n        >>> x.flip()\n        jt.Var([[3 4]\n                [1 2]], dtype=int32)\n        >>> x.flip(1)\n        jt.Var([[2 1]\n                [4 3]], dtype=int32)\n        >>> x.flip((0, 1))\n        jt.Var([[4 3]\n                [2 1]], dtype=int32)\n\n"
     if isinstance(dim, int):
         dim = [dim]
     for i in range(len(dim)):
@@ -388,47 +377,7 @@ def flip(x, dim=0):
 jt.Var.flip = flip
 
 def cross(input, other, dim=-1):
-    r'''
-    Returns the cross product of vectors in dimension dim of input and other.
-
-    the cross product can be calculated by (a1,a2,a3) x (b1,b2,b3) = (a2b3-a3b2, a3b1-a1b3, a1b2-a2b1)
-
-    input and other must have the same size, and the size of their dim dimension should be 3.
-
-    If dim is not given, it defaults to the first dimension found with the size 3.
-
-    Args:
-
-        input (Tensor) – the input tensor.
-
-        other (Tensor) – the second input tensor
-
-        dim (int, optional) – the dimension to take the cross-product in.
-
-        out (Tensor, optional) – the output tensor.
-    
-    Example:
-
-        >>> input = jt.random((6,3))
-
-        >>> other = jt.random((6,3))
-
-        >>> jt.cross(input, other, dim=1)
-        [[-0.42732686  0.6827885  -0.49206433]
-        [ 0.4651107   0.27036983 -0.5580432 ]
-        [-0.31933784  0.10543461  0.09676848]
-        [-0.58346975 -0.21417202  0.55176204]
-        [-0.40861478  0.01496297  0.38638002]
-        [ 0.18393655 -0.04907863 -0.17928357]]
-
-        >>> jt.cross(input, other)
-        [[-0.42732686  0.6827885  -0.49206433]
-        [ 0.4651107   0.27036983 -0.5580432 ]
-        [-0.31933784  0.10543461  0.09676848]
-        [-0.58346975 -0.21417202  0.55176204]
-        [-0.40861478  0.01496297  0.38638002]
-        [ 0.18393655 -0.04907863 -0.17928357]]
-    '''
+    " 批量计算向量叉乘：\n\n    :math:`(a_1, a_2, a_3) \\times (b_1, b_2, b_3) = (a_2 b_3 - a_3 b_2 ,  a_3 b_1 - a_1 b_3 ,  a_1 b_2 - a_2 b_1)`\n\n    参数：\n        - input (Var): 叉乘的左参数\n        - other (Var): 叉乘的右参数，形状与 ``input`` 相同\n        - dim (int): 计算叉乘的向量所在的维度，要求 ``input`` 和 ``other`` 在 ``dim`` 维的长度都是 3。负数表示从后往前数。默认值：-1\n\n    返回值：\n        ``input`` 和 ``other`` 对应向量叉乘的结果，形状与 ``input`` 和 ``other`` 相同\n\n    代码示例：\n        >>> x = jt.randn(2, 3)\n        >>> y = jt.randn(2, 3)\n        >>> x, y, x.cross(y)\n        (jt.Var([[ 0.6452728  -1.7699949   0.7562031 ]\n                 [ 0.32050335  0.7093985  -0.44102713]], dtype=float32),\n         jt.Var([[ 0.42947495  0.6956272  -0.35488197]\n                 [ 0.44775873 -0.19148853 -0.52726024]], dtype=float32),\n         jt.Var([[ 0.10210377  0.553766    1.2090378 ]\n                 [-0.45848927 -0.02848507 -0.3790121 ]], dtype=float32))\n        >>> x.cross(x)\n        jt.Var([[0. 0. 0.]\n                [0. 0. 0.]], dtype=float32)\n\n"
     assert input.shape==other.shape, "input shape and other shape must be same"
     if dim < 0: dim += len(input.shape)
     assert input.shape[dim] == 3, "input dim shape must be 3"
@@ -439,64 +388,19 @@ def cross(input, other, dim=-1):
 jt.Var.cross = cross
 
 def normalize(input, p=2, dim=1, eps=1e-30):
-    r'''        
-    Performs L_p normalization of inputs over specified dimension.
-
-    Args:
-
-        input – input array of any shape
-
-        p (float) – the exponent value in the norm formulation. Default: 2
-
-        dim (int) – the dimension to reduce. Default: 1
-
-        eps (float) – small value to avoid division by zero. Default: 1e-12
-
-    Example:
-
-        >>> x = jt.random((6,3))
-        [[0.18777736 0.9739261  0.77647036]
-        [0.13710196 0.27282116 0.30533272]
-        [0.7272278  0.5174613  0.9719775 ]
-        [0.02566639 0.37504175 0.32676998]
-        [0.0231761  0.5207773  0.70337296]
-        [0.58966476 0.49547017 0.36724383]]
-
-        >>> jt.normalize(x)
-        [[0.14907198 0.7731768  0.61642134]
-        [0.31750825 0.63181424 0.7071063 ]
-        [0.5510936  0.39213243 0.736565  ]
-        [0.05152962 0.7529597  0.656046  ]
-        [0.02647221 0.59484214 0.80340654]
-        [0.6910677  0.58067477 0.4303977 ]]
-    '''
+    " 在指定维度对张量 :math:`L_p` 归一化\n\n    :math:`v' = \\frac{v}{\\max(\\lVert v \\rVert_p, \\epsilon)}`\n\n    参数：\n        - input (Var): 被归一化的张量\n        - p (float): 计算向量范数所用的指数。默认值：2\n        - dim (int | tuple[int, ...]): 被归一化的维度。默认值：1\n        - eps (float): 避免除以零所用的小量 :math:`\\epsilon` 。默认值： ``1e-30``\n\n    返回值：\n        在 ``dim`` 指定维度归一化后的张量\n\n    代码示例：\n        >>> x = jt.randn(2, 3)\n        >>> x, x.normalize()\n        (jt.Var([[ 0.6452728  -1.7699949   0.7562031 ]\n                 [ 0.32050335  0.7093985  -0.44102713]], dtype=float32),\n         jt.Var([[ 0.31786057 -0.8718973   0.3725047 ]\n                 [ 0.35822764  0.792897   -0.49293745]], dtype=float32))\n        >>> x.normalize().norm()\n        jt.Var([1. 1.], dtype=float32)\n\n"
     return input / input.norm(p, dim, True, eps)
 jt.Var.normalize = normalize
 
 def unbind(x, dim=0):
-    r'''
-    Removes a var dimension.
-
-    Returns a tuple of all slices along a given dimension, already without it.
-
-    Args:
-
-        input (var) – the var to unbind
-
-        dim (int) – dimension to remove
-
-    Example:
-
-        a = jt.random((3,3))
-        b = jt.unbind(a, 0)
-
-    '''
+    "\n解除一个var的维度。\n\n返回沿着给定维度的所有切片的元组，已经没有它。\n\n参数:\n\n    x (var) – 需要解除维度的var\n\n    dim (int，默认值为0) – 需要移除的维度\n\n例子:\n\n   >>> a = jt.random((2,3))\n   >>> b = jt.unbind(a, 0)\n   >>> c = jt.unbind(a, 1)\n   >>> a,b,c\n   jt.Var([[0.2874082  0.46987164 0.13281713]\n        [0.2576157  0.7470389  0.48285943]], dtype=float32)\n   [jt.Var([0.2874082  0.46987164 0.13281713], dtype=float32), jt.Var([0.2576157  0.7470389  0.48285943],  dtype=float32)]\n   [jt.Var([0.2874082 0.2576157], dtype=float32), jt.Var([0.46987164 0.7470389 ], dtype=float32), jt.Var([0.13281713 0.48285943], dtype=float32)]\n\n\n注意：\n\n    如果dim值给定为负数，那么需要首先对其进行处理，使其等于dim加上x的形状的长度之和。\n\n\n"
     if dim < 0: dim += len(x.shape)
     return [x[(slice(None),)*dim+(i,)] for i in range(x.shape[dim])]
 
 jt.Var.unbind = unbind
 
 def make_grid(x, nrow=8, padding=2, normalize=False, range=None, scale_each=False, pad_value=0):
+    " 将多个图片按网格状拼成一个图片\n\n    参数：\n        - x (Var): 图片数据，形状 :math:`(n, c, h, w)`\n        - nrow (int): 每行多少个图片，最终拼成的网格形状是 :math:`(n / \\mathtt{nrow}, nrow)` 。默认值：8\n        - padding (int): 图片间的间隔。默认值：2\n        - normalize (bool): 是否将图片值线性映射到 :math:`[0, 1]` 。默认值：False\n        - range (None | tuple[float, float]): 映射到 :math:`[0, 1]` 的范围，或者不指定则使用图片数据中的最小最大值。默认值：None\n        - scale_each (bool): 不支持，必须为 False。默认值：False\n        - pad_value (float): 图片间填充的值。默认值：0\n    示例：\n       >>> x = jt.randn(100, 3, 64, 64)\n       >>> grid = jt.make_grid(x)\n       >>> print(grid.shape)\n           [3,860,530,]\n    返回值：\n        形状 :math:`(c, h', w')` 的图片，由 ``x`` 中的图片组合成网格状而成\n\n\n"
     assert isinstance(range, tuple) or range is None
     assert scale_each == False
     if isinstance(x, list): x = jt.stack(x)
@@ -524,6 +428,7 @@ def save_image(
     pad_value = 0,
     format = None
 ):
+    " 将多个图片按网格状拼成一个图片后保存到 ``filepath`` 指定的文件\n\n    参数：\n        - x (Var): 图片数据，形状 :math:`(n, c, h, w)`\n        - filepath (str): 保存目标，文件名或打开的文件对象\n        - nrow (int): 每行多少个图片，最终拼成的网格形状是 :math:`(n / \\mathtt{nrow}, nrow)` 。默认值：8\n        - padding (int): 图片间的间隔。默认值：2\n        - normalize (bool): 是否将图片值线性映射到 :math:`[0, 1]` 。默认值：False\n        - range (None | tuple[float, float]): 映射到 :math:`[0, 1]` 的范围，或者不指定则使用图片数据中的最小最大值。默认值：None\n        - scale_each (bool): 不支持，必须为 False。默认值：False\n        - pad_value (float): 图片间填充的值。默认值：0\n        - format：保存的文件格式，默认由文件名扩展名确定\n     \n    示例代码：\n        >>> x = jt.randn(100, 3, 64, 64)\n        >>> save_image(x, 'random.png')\n\n\n"
     from PIL import Image
     grid = make_grid(x, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
@@ -534,6 +439,7 @@ def save_image(
 
 
 def _ntuple(n):
+    " 构造一个将值转换为 ``n`` 元组的函数\n\n    参数：\n        - n (int): 要构造的是几元组\n\n    返回值：\n        一个函数，将输入的可迭代对象不变，不可迭代对象重复 ``n`` 次变成 ``n`` 元组\n\n    代码示例：\n        >>> f = jt.misc._ntuple(3)\n        >>> f(1)\n        (1, 1, 1)\n        >>> f((1, 2, 3))\n        (1, 2, 3)\n\n\n"
     def parse(x):
         if isinstance(x, Iterable):
             return x
@@ -552,34 +458,7 @@ def unique(
     return_counts: bool=False, 
     dim: int=None):
 
-    r'''
-    Returns the unique elements of the input tensor.
-
-    Args:
-
-        input (var) – the input var
-
-        return_inverse (bool) – Whether to also return the indices for where elements in the original input ended up in the returned unique list. default: False
-
-        return_counts (bool) – Whether to also return the counts for each unique element. default: False
-
-        dim (int) – the dimension to apply unique. If None, the unique of the flattened input is returned. default: None
-
-    Example:
-
-        >>> jittor.unique(jittor.array([1, 3, 2, 3]))
-        jt.Var([1 2 3], dtype=int32)
-
-        >>> jittor.unique(jittor.array([1, 3, 2, 3, 2]), return_inverse=True, return_counts=True)
-        (jt.Var([1 2 3], dtype=int32), jt.Var([0 2 1 2 1], dtype=int32), jt.Var([1 2 2], dtype=int32))
-
-        >>> jittor.unique(jittor.array([[1, 3], [2, 3]]), return_inverse=True)
-            (jt.Var([1 2 3], dtype=int32), jt.Var([[0 2]
-                                                   [1 2]], dtype=int32))
-
-        >>> jittor.unique(jittor.array([[1, 3], [1, 3]]), dim=0)
-            jt.Var([[1 3]], dtype=int32)
-    '''
+    " 返回张量中去重后的元素\n\n    参数：\n        - input (Var): 被去重的张量\n        - return_inverse (bool): 是否返回 ``input`` 每个元素对应去重结果中的不重复元素下标。默认值：False\n        - return_counts (bool): 是否返回去重结果中每个不重复元素在 ``input`` 里出现次数，必须同时指定 ``return_inverse=True`` 才有效。默认值：False\n        - dim (int | None): 去重的维度，如果为 ``None`` 则将输入扁平化后再去重。默认值：None\n\n    返回值：\n        - 如果 ``return_inverse`` 未指定，则返回 ``Var`` 为去重结果\n        - 否则，如果 ``return_inverse`` 和 ``return_counts`` 指定，则返回 ``tuple[Var, Var, Var]`` 为去重结果、下标、出现次数\n        - 否则，仅 ``return_inverse`` 指定，则返回 ``tuple[Var, Var]`` 为去重结果、下标\n\n    代码示例：\n        >>> jt.unique(jt.array([1, 3, 2, 3]))\n        jt.Var([1 2 3], dtype=int32)\n        >>> jt.unique(jt.array([1, 3, 2, 3, 2]), return_inverse=True, return_counts=True)\n        (jt.Var([1 2 3], dtype=int32), jt.Var([0 2 1 2 1], dtype=int32), jt.Var([1 2 2], dtype=int32))\n        >>> jt.unique(jt.array([[1, 3], [2, 3]]), return_inverse=True)\n        (jt.Var([1 2 3], dtype=int32), jt.Var([[0 2]\n                                               [1 2]], dtype=int32))\n        >>> jt.unique(jt.array([[1, 3], [1, 3]]), dim=0)\n        jt.Var([[1 3]], dtype=int32)\n\n\n"
 
     temp_shape = None
     if dim == None:
@@ -769,19 +648,23 @@ jt.Var.unique = unique
 
 
 def hypot(a,b):
+    " 计算输入平方之和的平方根\n\n    :math:`\\sqrt{a^2 + b^2}`\n\n    参数：\n        - a (Var): 输入参数\n        - b (Var): 输入参数，形状和 ``b`` 一样\n\n    返回值：\n        ``a`` 和 ``b`` 平方之和的平方根\n\n    代码示例：\n        >>> a = jt.array([3.0, 5.0])\n        >>> b = jt.array([4.0, 12.0])\n        >>> jt.hypot(a, b)\n        jt.Var([ 5. 13.], dtype=float32)\n\n"
     return jt.sqrt(a.sqr()+b.sqr())
 
 def rad2deg(x):
+    " 将弧度转换为角度\n\n    :math:`x' = \\frac{180 x}{\\pi}`\n\n    参数：\n        - x (Var): 弧度值组成的张量\n\n    返回值：\n        ``x`` 中每个元素换成角度\n\n    代码示例：\n        >>> x = jt.array([[3.142, -3.142], [6.283, -6.283], [1.570, -1.570]])\n        >>> x.rad2deg()\n        jt.Var([[ 180.02333 -180.02333]\n                [ 359.98935 -359.98935]\n                [  89.95437  -89.95437]], dtype=float32)\n\n"
     return 180 * x / np.pi
 
 jt.Var.rad2deg = rad2deg
 
 def deg2rad(x):
+    "\n将输入中的每一个元素从角度值（以度为单位）转换为弧度值。转换的公式为:\n\n.. math::\n    rad = deg * \\frac{\\pi}{180}\n\n参数:\n    - x (Var) : 输入的角度值，可以是单一浮点数或任意形状的输入 Var\n\n返回:\n    float 或 Var: 转换后的弧度值，其形状与输入相同。\n\n代码示例:\n\n    >>> input = jt.float32([[180.0, -180.0], [360.0, -360.0], [90.0, -90.0]])\n    >>> jt.deg2rad(a)\n    jt.Var([[ 3.141593  -3.141593 ]\n        [ 6.283186  -6.283186 ]\n        [ 1.5707965 -1.5707965]], dtype=float32)\n\n"
     return x * np.pi / 180.
 
 jt.Var.deg2rad = deg2rad
 
 def arctan2(y,x):
+    "\n    按元素计算y/x的反正切值，以弧度计算。注意第一个参数 y 中的元素是 y 坐标，第二个参数 x 中的元素是 x 坐标。\n\n    .. math::\n    \n        \\text{arctan2}(y, x) =\n        \\begin{cases}\n        \\arctan(y / x) - \\pi, & \\text{ if } x \\lt 0, y \\lt 0 \\\\\n        \\arctan(y / x) + \\pi, & \\text{ if } x \\lt 0, y \\geq 0 \\\\\n        \\arctan(y / x), & \\text{ otherwise }\n        \\end{cases}\n    \n    参数：\n    \n        - y (Var): Jittor数组，任何shape和dtype。\n        - x (Var): Jittor数组，与y相同的shape和dtype。+\n    \n    返回：\n    \n        Jittor数组，具有和输入相同的shape和dtype。\n    \n    代码示例：\n\n        >>> x = jt.randn(3)\n        jt.Var([0.8616086  0.81152385 0.0437891], dtype=float32)\n        >>> y = jt.randn(3)\n        jt.Var([-0.0904924   1.4761028  -1.367789], dtype=float32)\n        >>> c = jt.arctan2(y, x)\n        jt.Var([-0.10464364  1.0681262  -1.5387927], dtype=float32)\n\n"
     angle = jt.zeros(x.shape,dtype=x.dtype)
     x = (x!=0.0).ternary(x, 1e-30)
     angle = (y/x).arctan()
@@ -794,9 +677,7 @@ atan2 = arctan2
 
 
 def nonzero(x):
-    r'''
-    Return the index of the elements of input tensor which are not equal to zero.
-    '''
+    "     返回输入tensor中每一个非零元素的索引。\n\n    参数:\n        x (Var): 任意形状的输入 Var\n\n    代码示例:\n\n    >>> x = jt.array([0, 1, 2, 0, 3, 0])\n    >>> y = jt.array([[0, 1, 2], [0, 3, 4], [0, 0, 1]])\n    >>> jt.nonzero(x)\n    jt.Var([[1]\n            [2]\n            [4]], dtype=int32)\n    >>> jt.nonzero(y)\n    jt.Var([[0 1]\n            [0 2]\n            [1 1]\n            [1 2]\n            [2 2]], dtype=int32)\n\n    返回值:\n        返回一个二维 Var, 每一行代表一个非零元素的索引。注意每一行的长度取决于输入 Var 的维度。\n    \n"
     x = jt.where(x)
     x = [xx.unsqueeze(1) for xx in x]
     if len(x)<2:
@@ -808,6 +689,7 @@ jt.Var.nonzero = nonzero
 
 
 def arange(start=0, end=None, step=1,dtype=None):
+    "    生成一个包含在区间[ ``start`` , ``end`` )内等间隔分布的数字的序列。\n\n    参数:\n        - start(float / Var): 默认值=0, 序列的开始值。也可以是一个仅包含一个元素的 Var\n\n        - end(float / Var): , 默认值=None, 序列的结束值，也可以是一个仅包含一个元素的 Var\n\n        - step(float / Var):, 默认值=1, 生成的数字序列之间的固定间隔，也可以是一个仅包含一个元素的 Var\n\n        - dtype(type): 可选, 把返回的 Var 转换为指定的数据类型。\n\n    代码示例:\n        >>> jt.arange(1, 3.5, 0.5, jt.float32)\n        jt.Var([1.  1.5 2.  2.5 3. ], dtype=float32)\n\n    返回值:\n        一个 1-D 的 Var 对象，包含从  ``start`` (包含)到 ``end`` (不包含)以 ``step`` 为步长的等差序列。\n    \n"
     if isinstance(start, jt.Var): start = start.item()
     if isinstance(end, jt.Var): end = end.item()
     if isinstance(step, jt.Var): step = step.item()
@@ -823,15 +705,13 @@ def arange(start=0, end=None, step=1,dtype=None):
     return x
 
 def log2(x):
+    "    计算 ``x`` 中每个元素的以 2 为底的对数值。\n\n    .. math::\n\n       y_i=\\log _2\\left(x_i\\right)\n\n    参数:\n        x(Var): 任意形状的输入 Var\n\n    代码示例:\n        >>> jt.array([1,2,4,8,10]).log2()\n        jt.Var([0. 1. 2.  3.  3.321928], dtype=float32)\n\n    返回值:\n        返回与输入形状相同的 Var, 其元素为输入元素的以2为底的对数。\n    \n"
     return jt.log(x)/math.log(2.0)
 
 jt.Var.log2 = log2
 
 def meshgrid(*tensors):
-    r'''
-    Take N tensors, each of which can be 1-dimensional vector, and create N n-dimensional grids, 
-    where the i th grid is defined by expanding the i th input over dimensions defined by other inputs.
-    '''
+    "    创建由 ``*tensors`` 这个输入的 Var 列表指定的坐标网格列表。\n\n    给定 :math:`N` 个 1D 张量 :math:`T_0 \\ldots T_{N-1}` 作为输入，输入对应的尺寸分别为 :math:`S_0 \\ldots S_{N-1}`，输出 :math:`N` 个 :math:`N` 维张量 :math:`G_0 \\ldots G_{N-1}`，每个形状为 :math:`\\left(S_0, \\ldots, S_{N-1}\\right)`，其中输出 :math:`G_i` 是通过将 :math:`T_i` 扩展到结果形状而构建的。\n\n    参数:\n        ``*tensors``: (jt.Var, 不限个数)- 输入的张量, 每个张量需要是一维的jt.Var向量。\n    \n    代码示例:\n        >>> a = jt.array([1, 2, 3])\n        >>> b = jt.array([4, 5, 6, 7])\n        >>> jt.meshgrid(a, b)\n        [jt.Var([[1 1 1 1]\n        [2 2 2 2]\n        [3 3 3 3]], dtype=int32), \n         jt.Var([[4 5 6 7]\n        [4 5 6 7]\n        [4 5 6 7]], dtype=int32)]\n\n    返回值:\n        grids(Var): 包含了 N 个 Var 的列表, 由输入张量列表决定。\n    \n"
     if len(tensors)==1 and isinstance(tensors[0], list):
         tensors = tensors[0]
     size = len(tensors)
@@ -850,20 +730,7 @@ def meshgrid(*tensors):
 
 
 def split(d, split_size, dim=0):
-    r'''
-    Splits the tensor into chunks. Each chunk is a view of the original tensor.
-
-    If  split_size is an integer type, then tensor will be split into equally sized chunks (if possible). Last chunk will be smaller if the tensor size along the given dimension dim is not divisible by split_size.
-
-    If split_size is a list, then tensor will be split into len(split_size) chunks with sizes in dim according to split_size_or_sections.
-   
-    Args:
-        d (Tensor) – tensor to split.
-
-        split_size (int) or (list(int)) – size of a single chunk or list of sizes for each chunk
-
-        dim (int) – dimension along which to split the tensor.
-    '''
+    "    将张量分割成多个块。每个块都是原始张量的一个视图。\n\n    如果 ``split_size`` 是整型，那么张量将被平均分割成等大小的块（如果可能的话）。如果给定维度 ``dim`` 上的张量大小不能被 ``split_size`` 整除，那么最后一个块的大小将会小于其他块。\n\n    如果 ``split_size`` 是列表，那么张量将被分割成 ``len(split_size)`` 块，每个块在 ``dim`` 维度上的大小将按照 ``split_size`` 列表指定。\n\n    参数:\n        - d (Var): 需要被分割的张量 Var, 任意形状。\n\n        - split_size (int 或者 list(int)): 单个块的大小，或者每个块的大小的列表。注意如果这里传入列表的话，应当确保列表的元素之和等于输入张量在给定分割维度上的长度 ``d.shape[dim]``。\n\n        - dim (int): 需要分割的张量的维度。默认值为0。\n    \n    代码示例:\n        >>> a = jt.arange(10).reshape(5, 2))\n        >>> jt.split(a, 2)\n        (jt.Var([[0 1]\n                [2 3]], dtype=int32), \n        jt.Var([[4 5]\n                [6 7]], dtype=int32), \n        jt.Var([[8 9]], dtype=int32))\n        >>> jt.split(a, [3, 1, 1])\n        (jt.Var([[0 1]\n                [2 3]\n                [4 5]], dtype=int32), \n        jt.Var([[6 7]], dtype=int32), \n        jt.Var([[8 9]], dtype=int32))\n\n    返回值:\n        分割后的张量块，以元组的形式返回: Tuple[Var, …]\n    \n"
     if isinstance(split_size,int):
         shape = d.shape[dim]
         if shape % split_size == 0:
@@ -901,14 +768,17 @@ def split(d, split_size, dim=0):
 jt.Var.split = split
 
 def tolist(x):
+    "    将输入的 Jittor Var 类型变量转化为 Python 的 list 类型。\n\n    参数:\n        x (Var): 任意形状的输入张量 Var。\n    \n    代码示例:\n        >>> a = jt.array([1,2,3])\n        >>> jt.tolist(a)\n        [1, 2, 3]\n\n    返回值:\n        转化后的 Python 列表类型 (list)\n  \n  "
     return x.numpy().tolist()
 jt.Var.tolist = tolist
 
 def view_as(x,y):
+    "    以 ``y`` 的形状对 ``x`` 进行 reshape。\n\n    也就是说，对 ``x`` 中的元素进行重排，使得 ``x`` 与 ``y`` 的形状相同。注意，``x`` 中的元素数量必须与 ``y`` 中的元素数量相同，否则报错。\n\n    参数:\n        - x (Var): 需要重塑的输入张量 Var。\n        - y (Var): 作为参照形状的的输入张量 Var。\n    \n    代码示例:\n        >>> x = jt.arange(4)\n        >>> y = jt.array([[1,2],[3,4]])\n        >>> jt.view_as(x, y)\n        jt.Var([[0 1]\n                [2 3]], dtype=int32)\n\n    返回值:\n        重塑后的 Var, 数据来自 ``x``, 形状和 ``y`` 相同。\n  \n  "
     return x.reshape(y.shape)
 jt.Var.view_as = view_as
 
 def diag(x,diagonal=0):
+    "    从向量构建对角矩阵或从方阵中提取对角元素。\n\n    如果输入是一个一维向量，返回一个二维方阵，其对角线上的元素由输入向量中的元素构成。\n\n    如果输入是一个二维方阵，返回一个由它的对角元素构成的一维向量。\n    \n    对角线的偏移量可以用 ``diagonal`` 确定，``diagonal`` = 0 代表主对角线， ``diagonal`` > 0 为沿右上方移动， ``diagonal`` < 0 为沿左下方移动。\n\n    参数:\n        - x (Var): 输入张量 Var, 向量或矩阵。\n        - diagonal (int): 对角偏移量，默认为 0。\n    \n    代码示例:\n        >>> a = jt.arange(4)\n        >>> jt.diag(a)\n        jt.Var([[0 0 0 0]\n                [0 1 0 0]\n                [0 0 2 0]\n                [0 0 0 3]], dtype=int32)\n        >>> b = jt.randn(2,2)\n        jt.Var([[-0.36892104  1.5115978 ]\n                [ 0.8735136   0.81891364]], dtype=float32)\n        >>> jt.diag(b)\n        jt.Var([-0.36892104, 0.81891364], dtype=float32)\n\n    返回值:\n        向量或方阵 (Var)\n    \n"
     assert x.ndim==1 or (x.ndim==2 and x.shape[0]==x.shape[1])
     d = diagonal if diagonal>=0 else -diagonal
     d_str = f'+{diagonal}' if diagonal>=0 else f'{diagonal}'
@@ -924,6 +794,7 @@ jt.Var.diag = diag
         
 
 def topk(input, k, dim=None, largest=True, sorted=True):
+    "    在指定维度上保留最大/最小的 ``k`` 个元素\n\n    该函数实现了在输入 Var ``input`` 的指定维度上找出最大（或最小）的 ``k`` 个元素，并返回这些元素的值以及其在原始 Var 中的索引。返回的 Var 的大小与 ``input`` 一致，除了在指定的维度上大小为 ``k`` \n\n    参数:\n        - input (Var): 输入张量 Var, 任形状\n        - k (int):  指定寻找最大/最小元素个数\n        - dim (int): 指定在哪个维度上寻找最大/最小元素，默认为最后一个维度\n        - largest (bool): 为 ``True`` 时，返回最大的 ``k`` 个元素；为 ``False`` 时，返回最小的 ``k`` 个元素。默认为 ``True``\n        - sorted (bool): 为 ``True`` 时，返回的 ``k`` 个元素按照从大到小的顺序排列；为 ``False`` 时，返回的 ``k`` 个元素顺序是未指定的。默认为 ``True``\n    \n    代码示例:\n        >>> var = jt.array([[1, 2, 3, 4],[5, 6, 7, 8],[9, 10, 11, 12]])\n        >>> jt.topk(var, 2, dim=0)\n        (jt.Var([[ 9 10 11 12]\n                [ 5  6  7  8]], dtype=int32), \n        jt.Var([[2 2 2 2]\n                [1 1 1 1]], dtype=int32))\n        >>> jt.topk(var, 2, dim=1)\n        (jt.Var([[ 4  3]\n                [ 8  7]\n                [12 11]], dtype=int32), \n        jt.Var([[3 2]\n                [3 2]\n                [3 2]], dtype=int32))\n\n    返回值:\n        Tuple of Var, 其中包含 ``input`` 在指定维度上仅保留最大/最小 ``k`` 个元素后的张量 (Var)，以及这些元素在 ``input`` 中的索引 (Var)。\n  \n  "
     if input.numel()==0:
         return jt.array([],dtype=input.dtype),jt.array([],dtype='int32')
     if dim is None:
@@ -940,6 +811,7 @@ def topk(input, k, dim=None, largest=True, sorted=True):
 jt.Var.topk = topk
 
 def kthvalue(input, k, dim=None, keepdim=False, keepdims=False):
+    "    在指定维度上保留最小的第 ``k`` 个元素\n\n    在输入 Var ``input`` 的指定维度上找出最小的第 ``k`` 个元素，并返回这些元素的值以及其在原始 Var 中的索引。返回的 Var 的大小在指定的维度上大小为 1，其他维度与 ``input`` 一致。\n\n    参数:\n        - input (Var): 输入张量 Var, 任意形状\n        - k (int):  指定寻找第 k 小的元素\n        - dim (int): 指定在哪个维度上寻找第 k 小的元素，默认为最后一个维度\n        - keepdim (bool): 为 ``True`` 时，则在输出中保持缩减的维度。默认为 ``False`` \n        - keepdims (bool): 和 keepdim 的作用相同。旨在与numpy对齐，其在numpy中采用的参数名称是keepdims。默认为 ``False``\n    \n    代码示例:\n        >>> var = jt.arange(1, 7).reshape(2, 3)\n        jt.Var([[1 2 3]\n                [4 5 6]], dtype=int32)\n        >>> jt.kthvalue(var, 2, dim=0, keepdim=True)\n        (jt.Var([[4 5 6]], dtype=int32), jt.Var([[1 1 1]], dtype=int32))\n        >>> jt.kthvalue(var, 2, dim=0, keepdim=False)\n        (jt.Var([4 5 6], dtype=int32), jt.Var([1 1 1], dtype=int32))\n\n    返回值:\n        Tuple of Var, 其中包含 ``input`` 在指定维度上仅保留第 ``k`` 小元素后的张量 (Var)，以及这些元素在 ``input`` 中的索引 (Var)。\n    \n"
     keepdim = keepdim or keepdims
     if dim is None:
         dim = -1
@@ -957,16 +829,47 @@ def kthvalue(input, k, dim=None, keepdim=False, keepdims=False):
 jt.Var.kthvalue = kthvalue
 
 def _prod(x,dim=0):
+    "    沿着指定维度计算输入张量在这个维度上所有元素的乘积。\n\n    参数:\n        - x (Var): 输入张量 Var, 任意形状\n        - dim (int): 指定要缩减的维度。默认为 0。但未填写dim时会默认计算所有元素乘积。\n    \n    代码示例:\n        >>> a = jt.randn(4, 2)\n        jt.Var([[-0.09882022  1.0750706 ]\n                [ 0.7829371   1.4028096 ]\n                [-0.62049896  1.2268904 ]\n                [ 0.3696484  -1.2867309 ]], dtype=float32)\n        >>> jt.prod(a, 1)\n        jt.Var([-0.10623872  1.0983117  -0.76128423 -0.475638  ], dtype=float32)\n\n    返回值:\n        Var，输出的张量\n    \n"
     x = jt.log(x)
     x = x.sum(dim=dim)
     return jt.exp(x)
 
 
 def numpy_cumsum(x, dim=None):
-    ''' cumsum implemented with numpy or cupy.
+    '''    沿着指定维度计算输入张量在这个维度上的累加求和。
+
+    累加求和是指，在指定方向上：
+
+    .. math::
+        y_i=x_1+x_2+x_3+\cdots+x_i
+
+    注意，该函数不应该直接调用。推荐使用jittor.misc.cumsum。
+
+    参数:
+        - x (Var): 输入张量 Var, 任意形状
+        - dim (int): 指定进行累加求和的轴。默认为最后一维。
     
-        This function should not be called directly. Instead, jittor.misc.cumsum is recommended.
-    '''
+    代码示例:
+        >>> a = jt.randn(4, 2)
+        jt.Var([[ 0.7793252  -2.1805465 ]
+                [-0.46900165  2.0724497 ]
+                [-1.2677554   0.31553593]
+                [ 0.14260457 -1.4511695 ]], dtype=float32)
+        >>> jt.numpy_cumsum(a, 1)
+        jt.Var([[ 0.7793252  -1.4012213 ]
+                [-0.46900165  1.603448  ]
+                [-1.2677554  -0.9522195 ]
+                [ 0.14260457 -1.3085649 ]], dtype=float32)
+        >>> jt.numpy_cumsum(a, 0)
+        jt.Var([[ 0.7793252  -2.1805465 ]
+                [ 0.31032354 -0.10809684]
+                [-0.95743185  0.2074391 ]
+                [-0.81482726 -1.2437304 ]], dtype=float32)
+
+    返回值:
+        Var，输出的张量，累加求和后的结果
+    
+'''
     def cumsum_forward(np, data):
         a = data['inputs'][0]
         b = data['outputs'][0]
@@ -983,10 +886,41 @@ def numpy_cumsum(x, dim=None):
     return jt.numpy_code(x.shape, x.dtype, [x], cumsum_forward, [cumsum_backward])
 
 def cub_cumsum(x, dim=None):
-    ''' cumsum implemented with CUB.
+    '''    沿着指定维度计算输入张量在这个维度上的累加求和，使用CUB实现。
+
+    累加求和是指，在指定方向上：
+
+    .. math::
+        y_i=x_1+x_2+x_3+\cdots+x_i
+
+    注意，该函数不应该直接调用。推荐使用jittor.misc.cumsum。该函数不支持 CPU 模式，需要先指定在 GPU 上计算。
+
+    参数:
+        - x (Var): 输入张量 Var, 任意形状
+        - dim (int): 指定进行累加求和的轴。默认为最后一维。
     
-        This function should not be called directly. Instead, jittor.misc.cumsum is recommended.
-    '''
+    代码示例:
+        >>> jt.flags.use_cuda = 1 # 使用 GPU 计算
+        >>> a = jt.randn(4, 2)
+        jt.Var([[ 0.7793252  -2.1805465 ]
+                [-0.46900165  2.0724497 ]
+                [-1.2677554   0.31553593]
+                [ 0.14260457 -1.4511695 ]], dtype=float32)
+        >>> jt.cub_cumsum(a, 1)
+        jt.Var([[ 0.7793252  -1.4012213 ]
+                [-0.46900165  1.603448  ]
+                [-1.2677554  -0.9522195 ]
+                [ 0.14260457 -1.3085649 ]], dtype=float32)
+        >>> jt.cub_cumsum(a, 0)
+        jt.Var([[ 0.7793252  -2.1805465 ]
+                [ 0.31032354 -0.10809684]
+                [-0.95743185  0.2074391 ]
+                [-0.81482726 -1.2437304 ]], dtype=float32)
+
+    返回值:
+        Var，输出的张量，累加求和后的结果
+    
+'''
     if (dim == None):
         dim = -1
     assert(dim >= -1 and dim < len(x.shape))
@@ -1006,16 +940,40 @@ def cub_cumsum(x, dim=None):
     return x
 
 def cumsum(x, dim=None):
-    '''
-    Parameters:
-    -----------
-    x: jt.var
-    dim: int
+    '''    沿着指定维度计算输入张量在这个维度上的累加求和。
 
-    Returns:
-    --------
-    the cumulative sum in dim of x
-    '''
+    累加求和是指，在指定方向上：
+
+    .. math::
+        y_i=x_1+x_2+x_3+\cdots+x_i
+
+    推荐直接调用该函数计算 cumsum。取决于是否指定在 GPU 上计算，该函数会调用不同的算子实现。
+
+    参数:
+        - x (Var): 输入张量 Var, 任意形状
+        - dim (int): 指定进行累加求和的轴。默认为最后一维。
+    
+    代码示例:
+        >>> a = jt.randn(4, 2)
+        jt.Var([[ 0.7793252  -2.1805465 ]
+                [-0.46900165  2.0724497 ]
+                [-1.2677554   0.31553593]
+                [ 0.14260457 -1.4511695 ]], dtype=float32)
+        >>> jt.cumsum(a, 1)
+        jt.Var([[ 0.7793252  -1.4012213 ]
+                [-0.46900165  1.603448  ]
+                [-1.2677554  -0.9522195 ]
+                [ 0.14260457 -1.3085649 ]], dtype=float32)
+        >>> jt.cumsum(a, 0)
+        jt.Var([[ 0.7793252  -2.1805465 ]
+                [ 0.31032354 -0.10809684]
+                [-0.95743185  0.2074391 ]
+                [-0.81482726 -1.2437304 ]], dtype=float32)
+
+    返回值:
+        Var，输出的张量，累加求和后的结果
+
+   '''
     if (dim == None):
         dim = -1
     assert(dim >= -1 and dim < len(x.shape))
@@ -1027,6 +985,7 @@ def cumsum(x, dim=None):
 jt.Var.cumsum = cumsum
 
 def cumprod(x,dim=None):
+    "    沿着指定维度计算输入张量在这个维度上的累乘。\n\n    累乘是指，在指定方向上：\n\n    .. math::\n        y_i=x_1 \\times x_2 \\times x_3 \\times \\cdots \\times x_i\n\n    注意，由于此函数的实现是先取 :math:`\\log` 再做累加，因此务必保证输入为正数，否则计算结果会有 ``nan``。\n\n    参数:\n        - x (Var): 输入张量 Var, 任意形状\n        - dim (int): 指定进行乘法的轴。默认为最后一维。\n    \n    代码示例:\n        >>> a = jt.arange(1, 7).reshape(2, 3)\n        jt.Var([[1 2 3]\n                [4 5 6], dtype=int32)\n        >>> jt.cumprod(a, 1)\n        jt.Var([[  1.        2.        6.     ]\n                [  4.       20.      120.00001]], dtype=float32)\n        >>> jt.cumprod(a, 0)\n        jt.Var([[ 1.  2.  3.]\n                [ 4. 10. 18.]], dtype=float32)\n\n    返回值:\n        Var，输出的张量，累乘后的结果，形状和输入一致\n   \n "
     x = jt.log(x)
     x = cumsum(x,dim=dim)
     return jt.exp(x)
@@ -1034,10 +993,28 @@ def cumprod(x,dim=None):
 jt.Var.cumprod=cumprod
 
 def nms(dets,thresh):
-    '''
-      dets jt.array [x1,y1,x2,y2,score]
-      x(:,0)->x1,x(:,1)->y1,x(:,2)->x2,x(:,3)->y2,x(:,4)->score
-    '''
+    '''    对给定的一个未排序的矩阵，执行非极大值抑制(non-maximum suppression, NMS)操作。
+
+    输入应当是一个二维矩阵，矩阵的每一行代表一个边界框，格式为： ``[x1, y1, x2, y2, score]`` ，其中， ``[x1, y1]`` 为左上角的坐标， ``[x2, y2]`` 为右下角的坐标， ``score`` 是该边界框对应的置信度分数。
+
+    函数使用的是贪婪策略，首先将所有边界框按照置信度得分降序排序，然后从中选取分数最高的边界框并移除所有与该边界框的 IoU 值大于阈值的边界框。然后对剩余的边界框重复上述过程直到没有边界框，最后返回被选出的边界框的索引。
+
+    IoU 是衡量两个边界框重叠程度的指标，其定义为两个边界框的交集面积除以并集面积。
+
+    参数:
+        - dets (Var): 输入的 Var， shape 为 (N, 5), N代表边界框的个数，5列分别代表 ``[x1,y1,x2,y2,score]``
+        - thresh (float): IoU 阈值，IoU 值大于此的边界框将被移除
+    
+    代码示例:
+        >>> a = dets = jt.array([[20, 20, 40, 40, 0.9],[22, 22, 42, 42, 0.8],[200, 200, 240, 240, 0.7]], dtype="float32")
+        >>> jt.nms(dets, 0.5)
+        jt.Var([0 2], dtype=int32)
+
+    返回值:
+        被选出的边界框的索引，类型为 Var，在原 `dets` 中的行索引。
+  
+  
+'''
     threshold = str(thresh)
     order = jt.argsort(dets[:,4],descending=True)[0]
     dets = dets[order]
@@ -1056,30 +1033,13 @@ jt.Var.expand_as = jt.Var.broadcast_var
 
 
 def index_fill_(x,dim,indexs,val):
-    r'''
-    Fills the elements of the input tensor with value val by selecting the indices in the order given in index.
-
-    Args:
-        x - the input tensor
-        dim - dimension along which to index
-        index – indices of input tensor to fill in
-        val – the value to fill with
-    '''
+    "    根据给定的索引 ``indexs`` 在指定维度 ``dim`` 上替换为给定元素值 ``val`` \n\n    参数:\n        - x (Var): 输入的 Var， 任意形状\n        - dim (int): 进行索引替换的维度\n        - indexs (Var): 需要替换的索引，类型为 Var，shape 为 (N, )，N 代表需要替换的索引个数\n        - val (float): 替换的元素值\n    \n    代码示例:\n        >>> x = jt.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=\"float32\")\n        >>> jt.index_fill_(x, 0, jt.array([0, 2]), -1)\n        jt.Var([[-1. -1. -1.]\n                [ 4.  5.  6.]\n                [-1. -1. -1.]], dtype=float32)\n        >>> jt.index_fill_(x, 1, jt.array([0, 2]), -1)\n        jt.Var([[-1.  2. -1.]\n                [-1.  5. -1.]\n                [-1.  8. -1.]], dtype=float32)\n\n    返回值:\n        进行索引替换之后的 Var，shape 与输入的 Var 一致\n\n    "
     overflow_conditions = [f'i{dim}=={i}'for i in indexs]
     indexs = [f'i{i}' for i in range(len(x.shape))]
     return x.reindex(shape = x.shape,indexes = indexs,overflow_conditions=overflow_conditions,overflow_value=val)
 
 def triu_(x,diagonal=0):
-    r'''
-    Returns the upper triangular part of a matrix (2-D tensor) or batch of matrices input, the other elements of the result tensor out are set to 0.
-
-    The upper triangular part of the matrix is defined as the elements on and above the diagonal.
-
-    Args:
-        x – the input tensor.
-
-        diagonal – the diagonal to consider,default =0
-    '''
+    "    返回输入二维矩阵或批量矩阵输入 ``x`` 的上三角部分，其余部分为 0。注意输入矩阵可以不是方阵。\n\n    对角线的偏移量可以用 ``diagonal`` 确定，``diagonal`` = 0 代表主对角线， ``diagonal`` > 0 为沿右上方移动， ``diagonal`` < 0 为沿左下方移动。 \n\n    参数:\n        - x (Var): 输入的 Var， 维度需要大于等于 2\n        - diagonal (int): 对角偏移量，默认为 0。\n    \n    代码示例:\n        >>> x = jt.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=\"float32\")\n        >>> jt.triu_(x, 0)\n        jt.Var([[1. 2. 3.]\n                [0. 5. 6.]\n                [0. 0. 9.]], dtype=float32)\n        >>> jt.triu_(x, 1)\n        jt.Var([[0. 2. 3.]\n                [0. 0. 6.]\n                [0. 0. 0.]], dtype=float32)\n        >>> jt.triu_(x, -1)\n        jt.Var([[1. 2. 3.]\n                [4. 5. 6.]\n                [0. 8. 9.]], dtype=float32)\n\n    返回值:\n        基于输入的上三角矩阵, Var\n    \n"
     l = len(x.shape)
     assert l>1
     overflow_conditions=[f'i{l-1}<i{l-2}+{diagonal}']
@@ -1253,6 +1213,7 @@ Output::
     return tree, out
     
 def python_pass_wrapper(mod_func, args, kw):
+    "    使用给定的模块函数 ``mod_func`` 、参数 ``args`` 和关键字参数 ``kw`` 通过 Python 的 \n    importlib 导入模块函数并执行它，最后返回执行结果。\n\n    参数:\n        - mod_func (str): 完全限定名称的模块函数，例如 'numpy.matmul' 或 'torch.nn.functional.relu'。\n\n        - args (tuple of str): 需要传递给模块函数的参数，这些参数应以元组的形式提供，元组中的每一项都要是字符串。 例如，如果函数需要两个参数 a 和 b，调用应该为python_pass_wrapper('func', ('a', 'b'), kw)\n\n        - kw (dict): 需要传递给模块函数的关键字参数，应以字典的形式提供。\n    \n    代码示例:\n        >>> jt.python_pass_wrapper('math.sqrt', ('25',), {})\n        5\n        >>> jt.python_pass_wrapper('builtins.len', ('[1, 2, 3]',), {})\n        3\n\n    返回值:\n        Any: 返回模块函数调用的结果。\n    \n"
     import importlib
     mod, func = mod_func.rsplit(".", 1)
     mod = importlib.import_module(mod)
@@ -1349,6 +1310,7 @@ inline static void {func_name}({",".join(pargs+oargs)}) {{
 
 
 def numpy_cumprod(a, dim):
+    "    沿着指定维度计算输入张量在这个维度上的累乘。\n\n    累乘是指，在指定方向上：\n\n    .. math::\n        y_i=x_1 \\times x_2 \\times x_3 \\times \\cdots \\times x_i\n\n    参数:\n        - a (Var): 输入张量 Var, 任意形状\n        - dim (int): 指定进行乘法的轴。默认为最后一维。\n    \n    代码示例:\n        >>> a = jt.arange(-3, 6).reshape(3, 3)\n        jt.Var([[-3 -2 -1]\n                [ 0  1  2]\n                [ 3  4  5]], dtype=int32)\n        >>> jt.numpy_cumprod(a, 1)\n        jt.Var([[-3  6 -6]\n                [ 0  0  0]\n                [ 3 12 60]], dtype=int32)\n        >>> jt.numpy_cumprod(a, 0)\n        jt.Var([[ -3  -2  -1]\n                [  0  -2  -2]\n                [  0  -8 -10]], dtype=int32)\n\n    返回值:\n        Var，输出的张量，累乘后的结果，形状和输入一致\n    \n"
     class CumprodFunc(jt.Function):
         def forward_code(self, np, data):
             a = data["inputs"][0]
@@ -1407,6 +1369,7 @@ def numpy_cumprod(a, dim):
     return func(a, dim)
 
 def linspace(start, end, steps):
+    "    生成一个由 ``start`` 到 ``end`` 等距的一维张量，其中共有 ``steps`` 个元素，并且包含end。也就是说输出张量为：\n\n    .. math::\n        \\left(\\text { start, } \\text { start }+\\frac{\\text { end }- \\text { start }}{\\text { steps }-1}, \\ldots, \\text { start }+(\\text { steps }-2) * \\frac{\\text { end }- \\text { start }}{\\text { steps }-1}, \\text { end }\\right)\n\n    参数:\n        - start (int, float): 起始值\n        - end (int, float): 结束值\n        - steps (int): 构造的 Var 的长度\n    \n    代码示例:\n        >>> jt.linspace(3, 10, 5)\n        jt.Var([ 3.    4.75  6.5   8.25 10.  ], dtype=float32)\n\n    返回值:\n        Var，一个一维张量，包含在 ``start`` 和 ``end`` 之间的等间隔步数。\n    \n"
     if steps > 1:
         res = jt.index((steps,))[0]
         res = res*float((end-start)/(steps-1))+start
@@ -1415,19 +1378,26 @@ def linspace(start, end, steps):
     return res
 
 def randperm(n, dtype="int32"):
+    "    生成一个随机排列张量 Var，其中元素为从 0 到 ``n - 1`` 这 ``n`` 个整数。\n\n    参数:\n        - n (int): 要生成的随机排列数组的长度。\n        - dtype (str): 返回的张量中的数据类型，默认为 'int32'\n    \n    代码示例:\n        >>> print(jt.randperm(7))\n        jt.Var([5 3 6 0 4 2 1], dtype=int32)\n\n    返回值:\n        一个从0到n-1的随机排列的 Var 对象。\n   \n "
     key = jt.random((n,))
     index, _ = jt.argsort(key)
     return index.cast(dtype)
 
 def set_global_seed(seed, different_seed_for_mpi=True):
-    ''' Sets the seeds of the random number generators of Python, numpy and jittor,
-    simultaneously.
+    '''    设置Python，numpy和jittor的随机数生成器的种子。
 
-    .. note::
-    Jittor also gurantees each worker of jittor.dataset.Dataset to hold a different seed,
-    also gurantees each process hold a different seed which using mpi,
-    which is (global_seed ^ (worker_id*1167)) ^ 1234 + jt.rank * 2591
-    '''
+    这个函数同步地设置了这三个随机数生成器的种子，将它们设置为同一个值，以保证在使用这些生成器时获得一致的随机数。
+
+    Jittor还确保了jittor.dataset.Dataset的每一个工作进程都持有一个不同的种子，同时也保证了使用mpi的每一个进程都持有一个不同的种子。这是通过如下的公式实现的: (global_seed ^ (worker_id*1167)) ^ 1234 + jt.rank * 2591
+
+    参数:
+        - seed (int): 指定要设置的随机数种子的值，无默认值
+        - different_seed_for_mpi (bool): 是否为每一个使用mpi的进程设置一个不同的种子，默认为True。
+    
+    返回值:
+        无返回值
+    
+'''
     if (different_seed_for_mpi):
         seed = seed + jt.rank * 2591
     import random
@@ -1444,25 +1414,28 @@ import time
 set_global_seed(int(time.time() * 1000000) % 100000007)
 
 def searchsorted(sorted, values, right=False):
-    """
-    Find the indices from the innermost dimension of `sorted` for each `values`.
+    '''    对有序张量 ``sorted`` 的最后一个维度进行搜索以查找 ``values`` 中每个值应该插入到（插入后仍保持数组有序）的索引位置。
 
-Example::
-
-    sorted = jt.array([[1, 3, 5, 7, 9], [2, 4, 6, 8, 10]])
-    values = jt.array([[3, 6, 9], [3, 6, 9]])
-    ret = jt.searchsorted(sorted, values)
-    assert (ret == [[1, 3, 4], [1, 2, 4]]).all(), ret
-
-    ret = jt.searchsorted(sorted, values, right=True)
-    assert (ret == [[2, 3, 5], [1, 3, 4]]).all(), ret
+    参数:
+        - sorted (Var): 输入的有顺序的数组
+        - values (Var): 要进行插入的值
+        - right (bool): 默认为 False。如果为 False，则返回的索引 ``i`` 满足 ``sorted[i-1] < value <= sorted[i]``；如果为 True，则返回的索引 ``i`` 满足 ``sorted[i-1] <= value < sorted[i]``。
     
-    sorted_1d = jt.array([1, 3, 5, 7, 9])
-    ret = jt.searchsorted(sorted_1d, values)
-    assert (ret == [[1, 3, 4], [1, 3, 4]]).all(), ret
+    代码示例:
+     >>> sorted = jt.array([[1, 3, 5, 7, 9], [2, 4, 6, 8, 10]])
+     >>> values = jt.array([[3, 6, 9], [3, 6, 9]])
+     >>> ret = jt.searchsorted(sorted, values)
+     >>> assert (ret == [[1, 3, 4], [1, 2, 4]]).all(), ret
+     >>> ret = jt.searchsorted(sorted, values, right=True)
+     >>> assert (ret == [[2, 3, 5], [1, 3, 4]]).all(), ret
+     >>> sorted_1d = jt.array([1, 3, 5, 7, 9])
+     >>> ret = jt.searchsorted(sorted_1d, values)
+     >>> assert (ret == [[1, 3, 4], [1, 3, 4]]).all(), ret
 
-
-    """
+    返回值:
+        返回一个形状与 ``values`` 相同的 Var ，数组中的每个值表示对应的 ``values`` 在 ``sorted`` 中的索引位置。
+    
+'''
     _searchsorted_header = f"""
 namespace jittor {{
 
@@ -1505,47 +1478,7 @@ inline static void searchsorted(
 
 
 def scatter(x:jt.Var, dim:int, index:jt.Var, src:jt.Var, reduce='void'):
-    ''' if x is a 3-D array, rewrite x like:
-
-    self[index[i][j][k]][j][k] = src[i][j][k]  # if dim == 0
-    self[i][index[i][j][k]][k] = src[i][j][k]  # if dim == 1
-    self[i][j][index[i][j][k]] = src[i][j][k]  # if dim == 2
-
-Parameters::
-
-    * x (jt.Var) – input array
-    * dim (int) – the axis along which to index
-    * index (jt.Var) – the indices of elements to scatter, can be either empty or of the same dimensionality as src. When empty, the operation returns self unchanged.
-    * src (jt.Var) – the source element(s) to scatter.
-    * reduce (str, optional) – reduction operation to apply, can be either 'add' or 'multiply'.
-
-Example::
-
-    src = jt.arange(1, 11).reshape((2, 5))
-    index = jt.array([[0, 1, 2, 0]])
-    x = jt.zeros((3, 5), dtype=src.dtype).scatter_(0, index, src)
-    assert (x.data == 
-        [[1, 0, 0, 4, 0],
-        [0, 2, 0, 0, 0],
-        [0, 0, 3, 0, 0]]).all()
-    index = jt.array([[0, 1, 2], [0, 1, 4]])
-    x = jt.zeros((3, 5), dtype=src.dtype).scatter_(1, index, src)
-    assert (x.data ==
-        [[1, 2, 3, 0, 0],
-        [6, 7, 0, 0, 8],
-        [0, 0, 0, 0, 0]]).all()
-    x = jt.full((2, 4), 2.).scatter_(1, jt.array([[2], [3]]),
-            jt.array(1.23), reduce='multiply')
-    assert np.allclose(x.data, 
-        [[2.0000, 2.0000, 2.4600, 2.0000],
-        [2.0000, 2.0000, 2.0000, 2.4600]]), x
-    x = jt.full((2, 4), 2.).scatter_(1, jt.array([[2], [3]]),
-            jt.array(1.23), reduce='add')
-    assert np.allclose(x.data,
-        [[2.0000, 2.0000, 3.2300, 2.0000],
-        [2.0000, 2.0000, 2.0000, 3.2300]])
-
-    '''
+    "    根据指定的索引 ``index`` 将 ``src`` 中的元素散布到输入数组 ``x`` 的 ``dim`` 维度，返回修改后的 ``x`` 数组。 \n\n    当 ``x`` 是3维数组时，该函数的效果可表述为:\n\n    self[index[i][j][k]][j][k] = src[i][j][k]  # if dim == 0\n    self[i][index[i][j][k]][k] = src[i][j][k]  # if dim == 1\n    self[i][j][index[i][j][k]] = src[i][j][k]  # if dim == 2\n\n    参数:\n        - x (Var): 输入数组\n        - dim (int): 指定的维度，用于指定沿哪个轴进行索引\n        - index (Var): 用于散布元素的索引，可以为空，或与 ``src`` 的维数相同。当索引为空时，该操作返回的是原始的 ``x`` 数组，即没有做任何修改。\n        - src (Var): 需要散布的源元素\n        - reduce (str): 可选，确定如何执行散布操作。此参数可以是 \"add\" 或 \"multiply\"。\n    \n    代码示例:\n        >>> src = jt.arange(1, 11).reshape((2, 5))\n        >>> index = jt.array([[0, 1, 2, 0]])\n        >>> x = jt.zeros((3, 5), dtype=src.dtype)\n        >>> jt.scatter(x, 0, index, src)\n        jt.Var([[1 0 0 4 0]\n                [0 2 0 0 0]\n                [0 0 3 0 0]], dtype=int32)\n\n    返回值:\n        Var，修改后的 ``x`` 数组，形状与其一致\n    \n"
     shape = index.shape
     if src.shape != shape and src.numel() != 1:
         src = src[tuple( slice(None,s) for s in shape )]
@@ -1560,28 +1493,32 @@ jt.Var.scatter = scatter
 jt.Var.scatter_ = scatter_
 
 def gather(x, dim, index):
-    ''' if x is a 3-D array, reindex x like:
+    '''    该函数用给定的索引数组重新索引源数组（如果源数组是3-D数组）。
+    
+    对于索引数组中的每个元素，假设当前元素的坐标是(i,j,k)，则在结果数组中当前索引对应的元素取决于参数 ``dim`` 的值：
+    
+    - 如果dim == 0, out[i][j][k] = input[index[i][j][k]][j][k]
+    - 如果dim == 1, out[i][j][k] = input[i][index[i][j][k]][k]
+    - 如果dim == 2, out[i][j][k] = input[i][j][index[i][j][k]]
 
-    out[i][j][k] = input[index[i][j][k]][j][k]  # if dim == 0
-    out[i][j][k] = input[i][index[i][j][k]][k]  # if dim == 1
-    out[i][j][k] = input[i][j][index[i][j][k]]  # if dim == 2
+    参数:
+        - x (Var): 输入数组
+        - dim (int): 索引操作进行的轴
+        - index (Var): 元素的索引数组
+    
+    代码示例:
+        >>> t = jt.array([[1, 2], [3, 4]])
+        >>> jt.gather(t, 1, jt.array([[0, 0], [1, 0]]))
+        jt.Var([[1 1]
+                [4 3]], dtype=int32)
+        >>> jt.gather(t, 0, jt.array([[0, 0], [1, 0]]))
+        jt.Var([[1 2]
+                [3 2]], dtype=int32)
 
-
-Parameters::
-
-    * x (jt.Var) – the source array
-    * dim (int) – the axis along which to index
-    * index (jt.Var) – the indices of elements to gather
-
-Example::
-
-    t = jt.array([[1, 2], [3, 4]])
-    data = t.gather(1, jt.array([[0, 0], [1, 0]]))
-    assert (data.data == [[ 1,  1], [ 4,  3]]).all()
-    data = t.gather(0, jt.array([[0, 0], [1, 0]]))
-    assert (data.data == [[ 1,  2], [ 3,  2]]).all()
-
-    '''
+    返回值:
+        Var，通过指定的索引方式重新索引源数组，汇总得到的结果。
+    
+'''
     shape = index.shape
     indexes = [ f'i{i}' for i in range(len(shape)) ]
     indexes[dim] = index
@@ -1590,25 +1527,30 @@ Example::
 jt.Var.gather = gather
 
 def roll(x, shifts, dims=None):
-    '''Roll the tensor along the given dimension(s).
+    '''    将给定的张量在指定维度上滚动，或者说循环移动 ``shifts`` 位。
 
-Parameters::
+    参数:
+        - x (Var): 源数组
+        - shifts (int or tuple): 滚动的偏移量
+        - dims (int or tuple, default=None): 滚动的维度，默认为最后一维
+    
+    代码示例:
+        >>> x = jt.array([1, 2, 3, 4, 5, 6, 7, 8]).view(4, 2)
+        >>> jt.roll(x, 1, 0)
+        jt.Var([[7 8]
+                [1 2]
+                [3 4]
+                [5 6]], dtype=int32)
+        >>> jt.roll(x, -2, 0)
+        jt.Var([[5 6]
+                [7 8]
+                [1 2]
+                [3 4]], dtype=int32)
 
-    * x (jt.Var) – the source array
-    * shifts (int or tuple) – shift offset of dims
-    * dims (int or tuple) – shift dims
-
-Examples::
-
-        x = jt.array([1, 2, 3, 4, 5, 6, 7, 8]).view(4, 2)
-        y = x.roll(1, 0)
-        assert (y.numpy() == [[7,8],[1,2],[3,4],[5,6]]).all()
-        y = x.roll(-1, 0)
-        assert (y.numpy() == [[3,4],[5,6],[7,8],[1,2]]).all()
-        y = x.roll(shifts=(2, 1), dims=(0, 1))
-        assert (y.numpy() == [[6,5],[8,7],[2,1],[4,3]]).all()
-
-    '''
+    返回值:
+        Var，循环移位后的张量
+    
+'''
     if isinstance(shifts, int):
         shifts = (shifts,)
     if dims is None:
@@ -1629,6 +1571,7 @@ Examples::
 jt.Var.roll = roll
 
 def safe_log(x):
+    "    计算输入矩阵 x 的对数值。\n\n    ..math::\n        y_i=\\log _e\\left(x_i\\right)\n\n    该函数在执行对数运算之前，使用 ``jt.safe_clip`` 将 x 的值限制在一个安全范围内 (1e-30, 1e+30)，以避免因取对数时出现零或极大值造成计算错误。\n\n    参数:\n        - x (Var): 源数组，任意形状\n    \n    代码示例:\n        >>> x = jt.array([0, 0.1, 1.0, 10.0, 100.0, -123])\n        >>> jt.safe_log(x)\n        jt.Var([-69.07755  -2.3025851   0.  2.3025851   4.6051702   -69.07755], dtype=float32)\n\n    返回值:\n        Var，``x`` 中元素的对数值，与 ``x`` 的形状相同。\n    \n"
     return jt.safe_clip(x, 1e-30, 1e30).log()
 jt.Var.safe_log = safe_log
 
@@ -1872,28 +1815,22 @@ class _CTCLossFunction(jt.Function):
 
 
 def ctc_loss(log_probs, targets, input_lengths, target_lengths, blank=0, reduction='mean', zero_infinity=False):
-    '''The Connectionist Temporal Classification loss.
+    '''    完成连通时间分类 (CTC, Connectionist Temporal Classification) 损失的计算。
 
+    计算连续（未分段）时间序列与目标序列之间的损失。CTCLoss 对输入到目标的可能对齐的概率求和，生成一个损失值，该值对每个输入节点可微分。假定输入到目标的对齐是“多对一”的，这限制了目标序列的长度，使其必须小于等于输入长度。
 
-    Reference:
-        A. Graves et al.: Connectionist Temporal Classification:
-        Labelling Unsegmented Sequence Data with Recurrent Neural Networks:
-        https://www.cs.toronto.edu/~graves/icml_2006.pdf
-
-    Input:
-
-        log_probs: shape is [T, N, C], T is the sequence length, N is the batch size, C is the class number.
-        targets: shape is [N, S], N is the batch size, S is the target sequence length, element should between [0,C).
-        input_lengths: shape is [N], which represents the length of input, element should between [0,T].
-        target_lengths: shape is N, which represents the length of target, element should between [0,S].
-        blank (int, default 0): blank label index
-        reduction (string): reduce batch loss,
-            if reduction is none, it will return (N,) array,
-            if reduction is mean or sum, it will return one scalar
-        zero_infinity (bool, default False):
-            zero_infinity for grad
-
-    Example:
+    参数:
+        - log_probs (Var): 形状为[T, N, C]的张量，T为序列长度，N为批次大小，C为类别数量。
+        - targets (Var): 形状为[N, S]的张量，N为批次大小，S为目标序列长度，其中的元素应在[0,C)范围内。
+        - input_lengths (Var): 形状为[N]的张量，每个元素代表输入序列的长度，元素应在[0,T]范围内。
+        - target_lengths (Var): 形状为[N]的张量，每个元素代表目标序列的长度，元素应在[0,S]范围内。
+        - blank (int)： 默认为 0，空白标签索引
+        - reduction (str)：减少批量损失，如果reduction是none，它会返回一个(N,)的数组，如果reduction是mean或sum，它会返回一个标量。默认为 "mean"。
+        - zero_infinity (bool):  默认为 False, 用于梯度计算
+    
+    代码示例:
+        
+    .. code-block:: python
 
         import jittor as jt
         T = 50      # Input sequence length
@@ -1909,10 +1846,13 @@ def ctc_loss(log_probs, targets, input_lengths, target_lengths, blank=0, reducti
         input_lengths = jt.full((N,), T, dtype=jt.int)
         target_lengths = jt.randint(low=S_min, high=S+1, shape=(N,), dtype=jt.int)
         loss = jt.ctc_loss(input, target, input_lengths, target_lengths)
-
+        # calculation result, loss is: jt.Var([115.42529], dtype=float32)
         dinput = jt.grad(loss, input)
 
-    '''
+    返回值:
+        Var，包含一个数，是计算出的 CTC 值。
+    
+'''
     result = _CTCLossFunction.apply(log_probs, targets, input_lengths, target_lengths, blank, zero_infinity)
     if reduction=="mean":
         return result.mean()
@@ -1991,23 +1931,38 @@ def _simple_for(x, func):
         '''
         return jt.code(x.shape, "bool", [x], cpu_src=src, cuda_src=src)
 
-def isnan(x): return _simple_for(x, "isnan(float(x))")
+def isnan(x): 
+    "     检查输入 Var 中的元素是否为 NaN。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> x = jt.array([1.0, float('nan'), 3])\n        >>> jt.isnan(x)\n        jt.Var([False  True False], dtype=bool)\n\n    返回值:\n        Var, 返回一个与输入张量x同形状的张量，每个元素是判断x对应元素是否为NaN的结果。\n    \n"
+    return _simple_for(x, "isnan(float(x))")
 jt.Var.isnan = isnan
-def isfinite(x): return _simple_for(x, "!isnan(float(x)) && !isinf(float(x))")
+def isfinite(x): 
+    "     检查输入 Var 中的元素是否为有限数值。\n\n    如果 ``x`` 中元素既不是NaN（Not a Number）也不是无穷大或无穷小（Infinity 或 -Infinity）,则返回True，否则返回False。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> x = jt.array([1.0, float('Infinity'), float('nan'), 3])\n        >>> jt.isfinite(x)\n        jt.Var([ True False False  True], dtype=bool)\n\n    返回值:\n        Var, 返回一个与输入张量x同形状的张量，每个元素是判断x对应元素是否为有限数值的结果。\n    \n"
+    return _simple_for(x, "!isnan(float(x)) && !isinf(float(x))")
 jt.Var.isfinite = isfinite
-def isinf(x): return _simple_for(x, "isinf(float(x))")
+def isinf(x): 
+    "     检查输入 Var 中的元素是否为无穷大值。\n\n    如果 ``x`` 中元素是无穷大或无穷小（Infinity 或 -Infinity）,则返回True，否则返回False。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> x = jt.array([1.0, float('inf'), float('nan'), float('-inf'), 3])\n        >>> jt.isinf(x)\n        jt.Var([False  True False  True False], dtype=bool)\n\n    返回值:\n        Var, 返回一个与输入张量x同形状的张量，每个元素是判断x对应元素是否为无穷大值的结果。\n    \n"
+    return _simple_for(x, "isinf(float(x))")
 jt.Var.isinf = isinf
-def isneginf(x): return _simple_for(x, "x<0 && isinf(float(x))")
+def isneginf(x): 
+    "     检查输入 Var 中的元素是否为负无穷。\n\n    如果 ``x`` 中元素是无穷小（-Infinity）,则返回True，否则返回False。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> x = jt.array([1.0, float('inf'), float('nan'), float('-inf'), 3])\n        >>> jt.isneginf(x)\n        jt.Var([False False False True False], dtype=bool)\n\n    返回值:\n        Var, 返回一个与输入张量x同形状的张量，每个元素是判断x对应元素是否为负无穷的结果。\n    \n"
+    return _simple_for(x, "x<0 && isinf(float(x))")
 jt.Var.isneginf = isneginf
-def isposinf(x): return _simple_for(x, "x>0 && isinf(float(x))")
+def isposinf(x): 
+    "     检查输入 Var 中的元素是否为正无穷。\n\n    如果 ``x`` 中元素是无穷大（+Infinity）,则返回True，否则返回False。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> x = jt.array([1.0, float('inf'), float('nan'), float('-inf'), 3])\n        >>> jt.isposinf(x)\n        jt.Var([False True False False False], dtype=bool)\n\n    返回值:\n        Var, 返回一个与输入张量x同形状的张量，每个元素是判断x对应元素是否为正无穷的结果。\n    \n"
+    return _simple_for(x, "x>0 && isinf(float(x))")
 jt.Var.isposinf = isposinf
 
 # fake torch interface
-def contiguous(x): return x.clone()
+def contiguous(x): 
+    "    在内存中创建给定 Var 的深拷贝。\n\n    该函数确保结果的内存是连续的，且与源张量分开。这在您需要更改张量，但不希望这些更改反映在原始张量中时非常有用。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> x = jt.array([1,2,3])\n        >>> y = contiguous(x)\n        >>> y[0] = 5\n        >>> print(x) \n        jt.Var([1 2 3], dtype=int32)\n        >>> print(y)\n        jt.Var([5 2 3], dtype=int32)\n\n    返回值:\n        Var, ``x`` 的深拷贝，占用连续的内存\n    \n"
+    return x.clone()
 jt.Var.contiguous = contiguous
-def cpu(x): return x.clone()
+def cpu(x): 
+    "    将指定的 Var 复制到CPU。\n\n    参数:\n        x (Var): 输入的张量。\n    \n    代码示例:\n        >>> a = jt.array([1, 2, 3])\n        >>> b = jt.cpu(a)\n        >>> print(b)\n        jt.Var([1 2 3], dtype=int32)\n\n    返回值:\n        Var, 与输入数据有相同值的新数据变量，位于 CPU 上。\n    \n"
+    return x.clone()
 jt.Var.cpu = cpu
 def to(x, *args, **kargs):
+    "\n    将 Jittor变量 x转换为指定类型或将其移动到指定计算设备上。\n    这个函数可以对Jittor变量进行类型转换(如，将整数类型转换为浮点数类型)，还可以把数据在CPU和GPU设备之间移动(假设你的系统有GPU设备，且已经安装好了CUDA)。\n\n    参数:\n        - x (jt.Var): 要转移或转换的 Jittor 变量。\n        - \\*args: 可变长度参数列表,第一个参数可以是: \n           - jt.NanoString 或可调用对象：在这种情况下，'x' 将被转换为指定的数据类型。\n           - str: 指定设备的字符串（'cuda' 或 'cpu'）。如果字符串中包含 'cuda'，Jittor 将使用 CUDA（GPU）进行未来的操作。如果字符串中包含 'cpu'，Jittor 将使用 CPU。\n        - \\**kargs: 任意关键字参数。\n\n    代码示例:\n        >>> var = jt.array([1, 2, 3])\n        >>> var_cuda = to(var, 'cuda') # 移动到 GPU\n        >>> var_float = to(var, jt.float32) # 转换为 float32\n\n    返回值:\n        jt.Var: 一个新的 Jittor 变量，已移至指定设备或转换为新的数据类型。如果未指定设备或数据类型，则返回 'x' 的克隆。\n\n"
     if len(args) >= 1:
         s = args[0]
         if isinstance(s, jt.NanoString) or callable(s):
@@ -2021,48 +1976,71 @@ def to(x, *args, **kargs):
 jt.Var.to = to
 
 def rsqrt(x):
+    "\n    def rsqrt(x)\n    计算并返回 Jittor 变量的平方根的倒数。\n    此函数对给定的 Jittor 变量执行平方根的倒数运算。它等效于 1 / sqrt(x)。\n\n    参数:\n        x (jt.Var): 输入的 Jittor 变量。\n\n    代码示例:\n        >>> var = jt.array([4, 9, 16])\n        >>> result = rsqrt(var)\n        >>> print(result)\n            [0.5, 0.33333333, 0.25]  # 分别是 2, 3, 4 的平方根的倒数\n\n    返回值:\n        jt.Var: 输入变量的平方根的倒数。返回结果的形状和数据类型与输入参数一致。\n"
     return 1/jt.sqrt(x)
 jt.Var.rsqrt = rsqrt
 
 def from_torch(x):
     '''
-    Convert torch Tensor to Jittor Var
-    '''
+    将PyTorch Tensor转化为Jittor Var。
+
+    参数:
+        x (torch.Tensor): 需要转化的PyTorch Tensor。
+
+    代码示例:
+        >>> import torch
+        >>> import jittor as jt
+        >>> a = torch.tensor([1.0, 2.0, 3.0])
+        >>> b = from_torch(a)
+        >>> print(b)
+        jt.Var([1.0, 2.0, 3.0])
+
+    返回值:
+        jt.Var: 转化后的Jittor Variable。
+
+
+'''
     return jt.Var(x.cpu().numpy())
 
-def triu(input: jt.Var, diagonal:int=0) -> jt.Var:
-    ''' Returns the upper triangular part of a matrix (2-D tensor) or batch of matrices input, the other elements of the result tensor out are set to 0.
+def triu(input: jt.Var, diagonal:int=0):
+    '''
+    返回输入的矩阵 (即2-D张量) 或者批量矩阵的上三角部分，其他元素被设置为0。
 
-    :param input: the input tensor.
-    :param diagonal:  the diagonal to consider(int).
-
-    Example::
-
+    参数:
+        - input: 输入张量，类型为jt.Var.
+        - diagonal: 需要计算的对角线，类型为int，默认为0。
+  
+    代码示例:
         a = jt.ones(3, 3)
         b = jt.triu(a)
         assert jt.all_equal(b, [[1,1,1],[0,1,1],[0,0,1]])
-        
+
         b = jt.triu(a, diagonal=1)
         assert jt.all_equal(b, [[0,1,1],[0,0,1],[0,0,0]])
         
         b = jt.triu(a, diagonal=-1)
         assert jt.all_equal(b, [[1,1,1],[1,1,1],[0,1,1]])
 
-    '''
+    返回值:
+        返回上三角的张量，类型为jt.Var.
+
+
+'''
     index = input.index()
     mask = index[-2] <= index[-1] - diagonal
     return jt.ternary(mask, input, jt.zeros_like(input))
 jt.Var.triu = triu
 jt.Var.triu_ = lambda x: x.assign(x.triu())
 
-def tril(input: jt.Var, diagonal:int=0) -> jt.Var:
-    ''' Returns the lower triangular part of a matrix (2-D tensor) or batch of matrices input, the other elements of the result tensor out are set to 0.
+def tril(input: jt.Var, diagonal:int=0):
+    '''
+    返回一个矩阵（2-D张量）或批量矩阵输入的下三角部分，结果张量out的其它元素被设为0. 
 
-    :param input: the input tensor.
-    :param diagonal:  the diagonal to consider(int).
+    参数:
+        - input: 输入张量，类型为jt.Var。
+        - diagonal: 考虑的对角线，类型为int，默认值为0。
 
-    Example::
-
+    代码示例:
         a = jt.ones(3, 3)
         b = jt.tril(a)
         assert jt.all_equal(b, [[1,0,0],[1,1,0],[1,1,1]])
@@ -2073,55 +2051,65 @@ def tril(input: jt.Var, diagonal:int=0) -> jt.Var:
         b = jt.tril(a, diagonal=-1)
         assert jt.all_equal(b, [[0,0,0],[1,0,0],[1,1,0]])
 
-    '''
+    返回值:
+        下三角矩阵，类型为jt.Var。
+
+'''
     index = input.index()
     mask = index[-2] >= index[-1] - diagonal
     return jt.ternary(mask, input, jt.zeros_like(input))
 jt.Var.tril = tril
 jt.Var.tril_ = lambda x: x.assign(x.tril())
 
-def all_equal(a: jt.Var, b: jt.Var) -> bool:
+def all_equal(a: jt.Var, b: jt.Var):
+    "\n    检查两个Jittor变量（jt.Var）是否完全相等。如果每一个元素都一致，函数则返回True，否则返回False。\n    这个函数通过逐元素的比较来判断两个变量是否相等。首先，使用`a == b`操作进行元素级的比较。然后，通过`.all()`操作来验证所有元素是否与`b`一致。最后，`.item()`操作将结果转化为Python的bool值。\n    传入变量应该是Jittor的Var类型，a和b的尺寸应该是一样的。如果不一样，函数将抛出ValueError`。\n\n\n    参数：\n        - a : jt.Var  第一个Jittor变量，用于比较的输入。\n        - b : jt.Var 第二个Jittor变量，用于比较的输入。\n\n    代码示例：\n    a = jt.array([1, 2, 3])\n    b = jt.array([1, 2, 3])\n    print(all_equal(a, b))  # 输出：True\n\n    a = jt.array([1, 2, 3])\n    b = jt.array([1, 2, 4])\n    print(all_equal(a, b))  # 输出：False\n\n    返回值：\n        bool类型，如果a和b所有元素相等，返回True，否则返回False。\n\n"
     return (a == b).all().item()
 jt.all_equal = all_equal
 
-def _to_float(x: jt.Var) -> jt.Var:
+def _to_float(x: jt.Var):
+    "\n    将指定的jt.Var变量转化为'float32'类型。\n\n    参数:\n        - x: 需要转换的jt.Var变量。\n    示例代码：\n          >>> x = jt.Var([1])\n          >>> y = x._to_float()\n          >>> x,y\n          jt.Var([1], dtype=int32) jt.Var([1.], dtype=float32)\n   \n 返回值:\n        转换类型后的jt.Var变量。\n\n\n"
     if x.dtype != "float64": x = x.float()
     return x
 jt.Var._to_float = _to_float
 
-def index_select(x: jt.Var, dim:int, index: jt.Var) -> jt.Var:
-    '''Returns a new var which indexes the x var along dimension dim using the entries in index.
+def index_select(x: jt.Var, dim:int, index: jt.Var):
+    '''
+    该方法返回一个新的张量，该张量通过使用索引在dim维度上对输入张量x进行索引。
+    返回的张量具有与原始张量（x）相同的维度数。dim维度的大小与索引的长度相同; 其他维度的大小与原始张量中的大小相同。
 
-The returned var has the same number of dimensions as the original var (x). The dimth dimension has the same size as the length of index; other dimensions have the same size as in the original tensor.
+    参数:
+        - x: jt.Var类型，输入的张量。
+        - dim: int类型，需要进行索引的维度。
+        - index: jt.Var类型，包含要索引的索引的1-D张量。
 
-    :param x: the input tensor.
-    :param dim:  the dimension to index.
-    :param index:  the 1-D tensor containing the indices to index.
+    返回值: 
+        jt.Var类型，新的通过索引获得的张量。
 
-    Example::
+    代码示例::
+        >>> x = jt.randn(3, 4)
+        >>> indices = torch.tensor([2, 1])
+        >>> y = jt.index_select(x, 0, indices)
+        >>> assert jt.all_equal(y, x[indices])
+        >>> y = jt.index_select(x, 1, indices)
+        >>> assert jt.all_equal(y, x[:, indices])
 
-        x = jt.randn(3, 4)
-        indices = torch.tensor([2, 1])
-        y = jt.index_select(x, 0, indices)
-        assert jt.all_equal(y, x[indices])
-        y = jt.index_select(x, 1, indices)
-        assert jt.all_equal(y, x[:, indices])
-
+    返回值: 
+        jt.Var类型，新的通过索引获得的张量。
 
     '''
     return x.getitem(((slice(None),)*dim)+(index,))
 jt.index_select = index_select
 
-def multinomial(weights: jt.Var, num_samples: int, replacement: bool=False) -> jt.Var:
-    ''' Returns a var where each row contains num_samples indices sampled from the multinomial probability distribution located in the corresponding row of input weights.
+def multinomial(weights: jt.Var, num_samples: int, replacement: bool=False):
+    '''
+    返回一个var，其中每一行包含从对应输入权重行的多项分布中抽取的num_samples个索引。
 
-    :param weights: the input probability.
-    :param num_samples: number of samples.
-    :param replacement: whether to draw with replacement or not.
+    参数:
+        - weights: 输入概率，类型为jt.Var。（如：weights = jt.float32([0, 10, 3, 0])）
+        - num_samples: 抽取的样本数量，类型为整数（如：num_samples = 4）。这个参数必须小于等于weights的个数。换句话说如果你在不放回的情况下设置num_samples为比weights个数还多，将会报错。
+        - replacement: 是否放回地抽样，类型为布尔值，默认为False。如果设置为True，那么每一次抽样权重不变，可以多次抽到同一个。反之，每抽一次，权重会进行相应改变，不会抽到同一个。
 
-
-    Example::
-
+    代码示例:
         weights = jt.float32([0, 10, 3, 0])
         x = jt.multinomial(weights, 2)
         assert jt.all_equal(x, [1, 2]) or jt.all_equal(x, [2, 1])
@@ -2132,7 +2120,10 @@ def multinomial(weights: jt.Var, num_samples: int, replacement: bool=False) -> j
         x = jt.multinomial(weights, 1)
         assert jt.all_equal(x, [[2],[1],[0]])
 
-    '''
+    返回值: 
+        返回一个var，其中每一行包含从对应输入权重行的多项分布中抽取的num_samples个索引。
+
+'''
     if replacement:
         cum_probs = jt.cumsum(weights)[..., None, :]
         cum_probs_l = cum_probs[..., :-1]
@@ -2209,11 +2200,13 @@ bfloat16_finfo.min = -1e38
 bfloat16_finfo.max = 1e38
 
 def finfo(dtype):
+    "\n根据指定的数据类型，返回其numpy浮点数类型的机器限制信息。numpy为每个浮点数提供了一个finfo对象，该对象提供了关于机器限制的信息，例如浮点数类型可以表示的最大和最小的正值、精度和“数字”的数量等，参见 ``https://numpy.org/doc/stable/reference/generated/numpy.finfo.html``\n\n    参数：\n        - dtype (str) : 指定的数据类型。例如：'float16'。\n\n    返回值：\n        返回对应指定数据类型的 numpy finfo 对象或者 'bfloat16_finfo'对象。\n\n    代码示例：\n        >>> from jittor import misc\n        >>> misc.finfo('float32')\n        finfo(resolution=1e-06, min=-3.4028235e+38, max=3.4028235e+38, dtype=float32)\n\n"
     if dtype == "bfloat16":
         return bfloat16_finfo
     return np.finfo(str(dtype).split('.')[-1])
 
 def iinfo(dtype):
+    "\n    此函数返回给定数据类型可表示的最大/最小整数的信息。此函数仅支持整数类型，如果dtype不是整数类型，会引发ValueError。    \n\n    参数:\n        - dtype (str)：期望获得其信息的数据类型的名称。如'int32'、'int16'等。\n\n    返回值:\n        返回一个iinfo对象，它有以下属性：min, max, dtype等。\n    \n    代码示例：\n        >>> from jittor import misc\n        >>> misc.iinfo('int32')\n        iinfo(min=-2147483648, max=2147483647, dtype=int32)\n\n"
     return np.iinfo(str(dtype).split('.')[-1])
 
 
@@ -2223,6 +2216,7 @@ def index_select(input,dim,indices):
 jt.Var.index_select = index_select
 
 def cuda(x):
+    "\n这是一个用于将Jittor的全局标记`use_cuda`设置为1，并返回输入值的函数。当`use_cuda`被设置为1时，这意味着Jittor将使用CUDA进行加速。\n\n    参数\n        - x : 输入值, 类型不限。\n\n    返回值：\n        x : 传入该函数的输入值。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> jt.flags.use_cuda\n        0\n        >>> jt.cuda(5)\n        5\n        >>> jt.flags.use_cuda\n        1\n\n"
     jt.flags.use_cuda = 1
     return x
 jt.Var.cuda = cuda

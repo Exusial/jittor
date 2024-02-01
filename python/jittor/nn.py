@@ -25,9 +25,7 @@ from jittor_utils import LOG
 
 
 def matmul_transpose(a, b):
-    '''
-    returns a * b^T
-    '''
+    "\n对于给定的两个矩阵 ``a`` 和 ``b`` ，这个函数首先将 ``b`` 转置，然后再对 ``a`` 和转置后的 ``b`` 进行矩阵乘法运算，返回该运算结果 :math:`ab^T`\n\n    参数:\n        - a (jittor_core.NdArray) : 输入的第一个矩阵\n        - b (jittor_core.NdArray) : 输入的第二个矩阵\n\n    返回值:\n        矩阵 ``a`` 与转置后的矩阵 ``b`` 的矩阵乘法运算结果。如果``a``的最后一个维度与``b``的最后一个维度不同，将引发 ``AssertionError`` ；如果 ``a`` 的形状与 ``b`` 的形状不同，这个函数会使用Jittor的广播规则来进行矩阵乘法运算。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> nn.matmul_transpose(jt.ones(3,4),jt.ones(3,4))\n        jt.Var([[4. 4. 4.]\n                [4. 4. 4.]\n                [4. 4. 4.]], dtype=float32)\n\n\n"
     assert a.shape[-1] == b.shape[-1], (a.shape, b.shape)
     if len(a.shape) != 2:
         aa = a.reshape((-1, a.shape[-1]))
@@ -80,40 +78,7 @@ def baddbmm(input, batch1, batch2, beta=1, alpha=1):
     return beta * input + res
 
 def matmul(a, b):
-    ''' matrix multiply, 
-
-Example::
-
-    a = jt.random([3])
-    b = jt.random([3])
-    c = jt.matmul(a, b)
-    assert c.shape == [1]
-
-    a = jt.random([3, 4])
-    b = jt.random([4])
-    c = jt.matmul(a, b)
-    assert c.shape == [3]
-
-    a = jt.random([10, 3, 4])
-    b = jt.random([4])
-    c = jt.matmul(a, b)
-    assert c.shape == [10, 3]
-
-    a = jt.random([10, 3, 4])
-    b = jt.random([4, 5])
-    c = jt.matmul(a, b)
-    assert c.shape == [10, 3, 5]
-
-    a = jt.random([10, 3, 4])
-    b = jt.random([10, 4, 5])
-    c = jt.matmul(a, b)
-    assert c.shape == [10, 3, 5]
-
-    a = jt.random([8, 1, 3, 4])
-    b = jt.random([10, 4, 5])
-    c = jt.matmul(a, b)
-    assert c.shape == [8, 10, 3, 5]
-    '''
+    "\n矩阵乘法。此函数接收两个参数，执行矩阵乘法操作，并且返回结果。输入矩阵a，b的尺寸必须匹配。具体来说，a的最后一维的大小必须和b的倒数第二维的大小相同。\n\n    参数：\n        - a : Var，形状为 (..., M, N)的第一个输入矩阵.\n        - b : Var, 形状为 (..., N, K)的第二个输入矩阵.\n\n    返回值：\n        结果矩阵, 形状为 (..., M, K)\n\n    代码示例：\n        >>> a = jt.random([3])\n        >>> b = jt.random([3])\n        >>> c = jt.matmul(a, b)\n        >>> c.shape\n        [1]\n        >>> a = jt.random([3, 4])\n        >>> b = jt.random([4])\n        >>> c = jt.matmul(a, b)\n        >>> c.shape \n        [3]\n        >>> a = jt.random([10, 3, 4])\n        >>> b = jt.random([4])\n        >>> c = jt.matmul(a, b)\n        >>> c.shape \n        [10, 3]\n        >>> a = jt.random([10, 3, 4])\n        >>> b = jt.random([4, 5])\n        >>> c = jt.matmul(a, b)\n        >>> c.shape \n        [10, 3, 5]\n        >>> a = jt.random([10, 3, 4])\n        >>> b = jt.random([10, 4, 5])\n        >>> c = jt.matmul(a, b)\n        >>> c.shape \n        [10, 3, 5]\n        >>> a = jt.random([8, 1, 3, 4])\n        >>> b = jt.random([10, 4, 5])\n        >>> c = jt.matmul(a, b)\n        >>> c.shape\n        [8, 10, 3, 5]\n    \n\n"
     with jt.flag_scope(amp_reg = jt.flags.amp_reg | 36):
         len_a = len(a.shape)
         len_b = len(b.shape)
@@ -163,146 +128,38 @@ def get_init_var_rand(shape, dtype):
     return jt.array(np.random.normal(0.0, 1.0, shape).astype(np.float32))
 
 def relu(x): 
-    r''' Applies the element-wise function:
-
-    .. math::
-        \text{ReLU6}(x) = \max(0,x)
-
-    :param x: the input var
-    :type x: jt.Var
-
-    Example:
-        >>> a = jt.randn(3)
-        >>> a
-        jt.Var([-0.38380373 1.1338731   6.128115  ], dtype=float32)
-        >>> nn.relu(a)
-        jt.Var([0.        1.1338731 6.128115 ], dtype=float32)
-    '''
+    " \n该函数为Jittor的ReLU激活函数（修正线性单元），在神经网络中应用广泛。ReLU函数在输入值 x > 0 时，返回 x；当输入值 x <= 0 时，返回 0，即 :math:`\\text{ReLU}(x) = \\max(0,x)`\n\n    参数：\n        - x (Var) : 输入的Var张量\n\n    返回值：\n        输入的张量x应用ReLU激活的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.5, -0.5, -0.7])\n        >>> nn.relu(x)\n        jt.Var([0.5 0.  0. ], dtype=float32)\n\n"
     cond = x>0.0
     return jt.ternary_out_hint(cond, x, 0.0)
 
 
 def leaky_relu(x, scale=0.01): 
-    r''' Applies the element-wise function:
-
-    .. math::
-        \text{LeakyRELU}(x) =
-        \begin{cases}
-        x, & \text{ if } x \geq 0 \\
-        \text{scale} \times x, & \text{ otherwise }
-        \end{cases}
-
-    :param x: the input var
-    :type x: jt.Var
-
-    :param scale: the :math:`\scale` value for the leaky relu formulation. Default: 0.01
-    :param scale: float, optional
-
-    Example:
-        >>> a = jt.randn(3)
-        >>> a
-        jt.Var([-0.38380373 1.1338731   6.128115  ], dtype=float32)
-        >>> nn.leaky_relu(a)
-        jt.Var([-3.8380371e-03  1.1338731e+00  6.1281152e+00], dtype=float32)
-    '''
+    "\n该函数为Jittor的Leaky ReLU激活函数，与ReLU函数不同的是，输入值 x < 0 时，不直接返回 0，而是返回输入值进行scale之后的结果：\n\n    .. math::\n        \\text{LeakyRELU}(x) =\n        \\begin{cases}\n        x, &  x \\geq 0 \\\\\\\\\n        \\text{scale} * x, & x < 0\n        \\end{cases}\n\n    参数：\n        - x(Var): 输入的Var张量\n        - scale(float，可选)：x<0情况下的放缩比例。默认值：0.01\n\n    返回值：\n        输入的张量x应用Leaky ReLU激活的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.5, -0.5, -0.7])\n        >>> nn.leaky_relu(x)\n        jt.Var([ 0.5   -0.005 -0.007], dtype=float32)\n\n"
     return jt.ternary(x>0, x, x*scale)
 
 def relu6(x): 
-    r''' Applies the element-wise function:
-
-    .. math::
-        \text{ReLU6}(x) = \min(\max(0,x), 6)
-
-    :param x: the input var
-    :type x: jt.Var
-
-    Example:
-        >>> a = jt.randn(3)
-        >>> a
-        jt.Var([-0.38380373 1.1338731   6.128115  ], dtype=float32)
-        >>> nn.relu6(a)
-        jt.Var([0.        1.1338731 6.       ], dtype=float32)
-    '''
+    "\n该函数为Jittor的ReLU6激活函数，这是一个元素级别（element-wise）函数。与ReLU函数不同的是，输入值 x >= 6 时，不直接返回 x，而是返回6:\n\n    .. math::\n        \\text{ReLU6}(x) = \\min(\\max(0,x), 6)\n\n    参数：\n        - x(Var): 输入的Var张量\n\n    返回值：\n        Var张量。张量x应用ReLU6激活的结果，每个元素的值在0和6之间\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.5, 6.5, -0.7])\n        >>> nn.relu6(x)\n        jt.Var([0.5 6.  0. ], dtype=float32)\n\n\n"
     return jt.minimum(jt.maximum(x, 0.0), 6.0)
 
 def elu(x: jt.Var, alpha: float = 1.0) -> jt.Var:
-    r''' Applies the element-wise function:
-
-    .. math::
-        \text{ELU}(x) = \begin{cases}
-        x, & \text{ if } x > 0\\
-        \alpha * (\exp(x) - 1), & \text{ if } x \leq 0
-        \end{cases}
-
-    :param x: the input var
-    :type x: jt.Var
-
-    :param alpha: the :math:`\alpha` value for the ELU formulation. Default: 1.0
-    :param alpha: float, optional
-
-    Example:
-        >>> a = jt.randn(3)
-        >>> a
-        jt.Var([-0.38380373 -1.1338731   2.128115  ], dtype=float32)
-        >>> nn.elu(a)
-        jt.Var([-0.31873488 -0.6782155   2.128115  ], dtype=float32)
-    '''
+    "\n该函数为Jittor的ELU激活函数，这是一个元素级别（element-wise）函数。与ReLU函数不同的是，输入值 x <= 0 时，不直接返回 0，而是返回关于x的自然指数的一个线性函数:\n\n    .. math::\n        \\text{ELU}(x) = \\begin{cases}\n        x, & \\text{当} x > 0\\\\\\\\\n        \\alpha * (\\exp(x) - 1), & \\text{当} x \\leq 0\n        \\end{cases}\n\n    参数：\n        - x(Var): 输入的Var张量\n        - alpha(float，可选)：x<=0时公式中的 :math:`\\alpha` 值。默认值：1.0\n\n    返回值：\n        Var张量。张量x应用ELU激活的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.5, 6.5, -0.7])\n        >>> nn.elu(x)\n        jt.Var([ 0.5        6.5       -0.5034147], dtype=float32)\n        >>> nn.elu(x, 0.1)\n        jt.Var([ 0.5         6.5        -0.05034147], dtype=float32)\n\n"
     return jt.ternary(x>0,x,alpha*(x.exp()-1))
 
 def sign(x: jt.Var) -> jt.Var:
-    ''' returns the signs of elements of x
-
-    :param x: the input Var
-    :type x: jt.Var
-
-    Example:
-        >>> a = jt.float32([0.99, 0, -0.99])
-        >>> nn.sign(a)
-        jt.Var([ 1.  0. -1.], dtype=float32)
-    '''
+    "\n这是一个元素级别（element-wise）函数。对输入变量x对应索引的元素应用符号函数。具体来说：当元素的值大于0时，返回1；当元素的值等于0时，返回0；当元素的值小于0时，返回-1，即：\n\n    .. math::\n        sign(x) = \n        \\begin{cases}\n        1, & \\text {if } x > 0 \\\\\n        0, & \\text {if } x = 0 \\\\\n        -1, & \\text {if } x < 0 \n        \\end{cases}\n\n    参数：\n        - x(Var): 输入的Var张量\n\n    返回值：\n        Var张量。张量x应用符号函数的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0, 6.5, -0.7])\n        >>> nn.sign(x)\n        jt.Var([ 0.  1. -1.], dtype=float32)\n\n\n"
     one = jt.ones(x.shape)
     x = jt.ternary(x>0, one, x)
     return jt.ternary(x<0, -one, x)
 
 def gelu(x):
-    r''' Applies the element-wise function:
-
-    .. math::
-        \text{GELU}(x) = x * \Phi(x)
-
-    where :math:`\Phi(x)` is the Cumulative Distribution Function for Gaussian Distribution.
-
-    :param x: the input var
-    :type x: jt.Var
-
-    Example:
-        >>> a = jt.randn(3)
-        >>> a
-        jt.Var([-0.38380373 -1.1338731   2.128115  ], dtype=float32)
-        >>> nn.gelu(a)
-        jt.Var([-0.134547   0.9882567  6.128115 ], dtype=float32)
-    '''
+    "\n该函数为Jittor的GELU激活函数，它是非线性激活函数，在输入张量的每个元素乘上对应的高斯分布CDF（累积分布函数）：:math:`\\text{GELU}(x) = x * \\Phi(x)` ，其中 :math:`\\Phi(x)` 是高斯分布的累积分布函数。这是一个元素级别（element-wise）函数。\n\n    参数：\n        - x(Var): 输入的Var张量\n\n    返回值：\n        Var张量。张量x应用GELU激活的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0, 6.5, -0.7])\n        >>> nn.gelu(x)\n        jt.Var([ 0.          6.5        -0.16937456], dtype=float32)\n\n"
     _sqrt2 = 1.4142135623730951
     erf = jt.erf(x/_sqrt2)+1
     r = erf*x*.5
     return r
 
 def silu(x):
-    r''' Applies the element-wise function:
-
-    .. math::
-        \text{SILU}(x) = x * Sigmoid(x)
-    
-    :param x: the input var
-    :type x: jt.Var
-
-    Example:
-        >>> a = jt.randn(3)
-        >>> a
-        jt.Var([-0.38380373 -1.1338731   2.128115  ], dtype=float32)
-        >>> nn.silu(a)
-        jt.Var([-0.15552104 -0.27603802  1.9016962 ], dtype=float32)
-    '''
+    "\n该函数为Jittor的SILU(Sigmoid线性单元)激活函数。这是一个元素级别（element-wise）函数。具体来说，其计算过程如下：\n    .. math::\n        \\text{SILU}(x) = x\\ *\\ \\text{Sigmoid}(x)\n\n    参数：\n        - x(Var): 输入的Var张量\n\n    返回值：\n        Var张量。张量x应用SILU激活的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0, 6.5, -0.7])\n        >>> nn.silu(x)\n        jt.Var([ 0.          6.490242   -0.23226856], dtype=float32)\n\n\n"
     return x * x.sigmoid()
 
 class ELU(Module):
@@ -372,6 +229,7 @@ class PReLU(Module):
 
 #TODO dims is 4 will cause slowly execution
 def cross_entropy_loss(output, target, weight=None, ignore_index=None,reduction='mean'):
+    "\n计算交叉熵损失。对于给定的类别标签`target`和网络输出结果`output`，计算交叉熵损失。该函数主要用于分类问题的损失计算。其具体计算公式如下，其中, *x* 是分类预测的输出，*class* 是真实的类别标签：\n\n    .. math::\n        L = -log( {e^{x[class]}}/{\\sum_{i}^{j}e^{x[i]}})\n\n    参数:\n        - output (jt.Var): 网络输出的结果，形状为(N, C)，这里N表示的是batchsize，而C为类别的数量，也可以为(N, H, W, C)形状，H，W分别为高和宽。\n        - target (jt.Var): 真实的类别标签，形状为(N,)或者(N, 1)，也可以为(N, H, W)形状。\n        - weight (jt.Var, 可选): 各个类别的权重，用于权衡不同类别对损失的贡献。默认值：None，如果提供此项，其形状应为(C,)。\n        - ignore_index (int, 可选): 需要忽略的类别标签。默认值：空，即不忽略任何标签。\n        - reduction (str, 可选): 指定减小损失的方式，可选值为`'none'`、`'mean'`或`'sum'`。`'none'`表示不执行任何减小损失，`'sum'`表示通过所有元素求和将损失减少，并且`'mean'`表示将损失通过所有元素平均值减小。默认值： `'mean'`\n\n    返回值:\n        jt.Var: 计算得到的交叉熵损失。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([[1,0,0], [0,1,0], [0,0,1], [1,0,0]])\n        >>> label = jt.array([1, 3, 2, 2])\n        >>>nn.cross_entropy_loss(output, label)\n        jt.Var([1.2181114], dtype=float32)\n\n"
     target_shape = target.shape
     if len(output.shape) == 4:
         c_dim = output.shape[1]
@@ -403,9 +261,11 @@ def cross_entropy_loss(output, target, weight=None, ignore_index=None,reduction=
         return loss.reshape(target_shape) 
 
 def mse_loss(output, target, reduction="mean"):
+    "\n计算均方误差（Mean Squared Error）损失。对于给定的类别标签`target`和网络输出结果`output`，计算均方误差损失。该函数主要用于分类问题的损失计算。可以选择损失函数输出方式，例如如果选择 `'mean'` ，则计算方式如下：\n\n    .. math::\n        L = \\frac{1}{n} \\sum_i^n (output[i] - target[i])^2\n\n    参数:\n        - output (jt.Var): 预测值，模型输出。如果output和target的类型不是jt.Var，会抛出TypeError。\n        - target (jt.Var): 目标值，实际值或者是标签。\n        - reduction (str, optional): 控制损失函数的输出方式，可以是'mean' （输出平均损失）, 'sum', 'none'之一。如果reduction的值不是'mean', 'sum', 'none'之一，会抛出ValueError。默认值：'mean'\n\n    返回值:\n        jt.Var: 均方误差损失。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([1.0, 1.0, 1.0])\n        >>> target = jt.array([0.5, 0.6, -2.0])\n        >>> nn.mse_loss(output, target)\n        jt.Var([3.1366668], dtype=float32)\n\n"
     return (output-target).sqr().reduce(reduction)
 
 def bce_loss(output, target, weight=None, size_average=True):
+    "\n计算二分类交叉熵(Binary Cross Entropy)损失。对于给定的类别标签`target`和网络输出结果`output`，计算二分类交叉熵损失，如果指定了权重，则每个样本的损失会乘以权重：\n\n    .. math::\n        loss(target, output) = -[target * log(max(output, 1e^{-20})) + (1 - target) * log(max(1 - output, 1e{-20}))]\n\n    参数:\n        - output (jt.Var): 预测值，模型输出。形状为(batch_size, num_classes)，元素数据类型为float32\n        - target (jt.Var): 目标值，实际值或者是标签。形状应与output保持一致，元素数据类型为float32\n        - weight (float，可选): 每个样本的权重，如果指定，应该是一个1-D张量，长度等于batch_size。默认值: None\n        - size_average (bool): 是否对损失求平均。如果是True, 返回损失的平均值；否则，返回损失之和。默认值: True\n\n    返回值:\n        jt.Var: 二分类交叉熵(Binary Cross Entropy)损失。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([1.0, 1.0, 1.0])\n        >>> target = jt.array([0.5, 0.6, -2.0])\n        >>> nn.bce_loss(output, target)\n        jt.Var([59.867214], dtype=float32)\n\n"
     loss = - (target * jt.log(jt.maximum(output, 1e-20)) + (1 - target) * jt.log(jt.maximum(1 - output, 1e-20)))
 
     if weight is not None:
@@ -417,18 +277,12 @@ def bce_loss(output, target, weight=None, size_average=True):
         return loss.sum()
 
 def l1_loss(output, target):
+    "\n计算给定输出和目标之间的L1损失（平均绝对误差）。L1损失是预测值output和真实值target之间差值的绝对值的均值：\n\n    .. math::\n        L = \\frac{1}{n} ∑|output_i - target_i|\n\n    参数:\n        - output (jt.Var): 预测值，模型输出。可以是任意形状的张量\n        - target (jt.Var): 目标值，实际值或者是标签。形状应与output保持一致\n\n    返回值:\n        jt.Var: 一个标量张量，表示L1损失。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([1.0, 1.0, 1.0])\n        >>> target = jt.array([0.5, 0.6, -2.0])\n        >>> nn.l1_loss(output, target)\n        jt.Var([1.3], dtype=float32)\n\n"
     return (output-target).abs().mean()
 
 
 def smooth_l1_loss(y_true, y_pred,reduction="mean"):
-    """Implements Smooth-L1 loss.
-    y_true and y_pred are typically: [N, 4], but could be any shape.
-
-    Args:
-         y_true - ground truth 
-         y_pred - predictions
-         reduction - the mode of cal loss which must be in ['mean','sum','none']
-    """
+    "\n计算给定输出和目标之间的Smooth-L1损失：\n    .. math::\n        Smooth-L1(x, y) =\\left{\\{}\\begin{array}{11}0.5 * (y-x)^2    & abs(y − x) < 1\\\\\n                 abs(y − x) - 0.5  & otherwise\\end{array}\n\n    参数:\n        - y_true (jt.Var): 真实值，通常为[N, 4]的形状，但是也可以是其他形状。\n        - y_pred (jt.Var): 预测值，通常为[N, 4]的形状，但是也可以是其他形状。\n        - reduction (str, 可选): 计算损失的方式，其值只能在['mean', 'sum', 'none']中选择。默认值： ``'mean'``\n    返回值:\n        jt.Var: 一个标量张量，表示Smooth-L1损失。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([1.0, 1.0, 1.0])\n        >>> target = jt.array([0.5, 0.6, -2.0])\n        >>> nn.smooth_l1_loss(target, output) \n        jt.Var([0.9016667], dtype=float32)\n\n"
     diff = jt.abs(y_true - y_pred)
     less_than_one = (diff<1.0).float32()
     loss = (less_than_one * 0.5 * diff.sqr()) + (1 - less_than_one) * (diff - 0.5)
@@ -442,6 +296,7 @@ def smooth_l1_loss(y_true, y_pred,reduction="mean"):
         raise ValueError(f'not support {reduction}')
 
 def nll_loss(output,target,weight=None,ignore_index=-100,reduction='mean'):
+    "\n根据给定的目标概率密度函数(target),计算负对数似然损失(negative log likelihood loss)。对于输入中的每个元素，计算该元素在目标处的负对数似然概率： :math:`loss(x, class) = -weight[class] * log(x[class])` ，其中log(x[class]) 是预测为class这一类的概率取对数。如果 ``reduction=='mean'`` ，那么 :math:`Out(n, c) = -weight[c]/\\sum(weight) * log(input_{n, c})`\n\n    参数:\n        - output (jt.Var) : 输出张量，具体维度或形状取决于具体的损失函数。对于nll_loss，input的形状是(minibatch, C)。\n        - target (jt.Var) : 目标张量。其定义在[0，class_num-1]之间的取值表示对应输入数据的类别标签。\n        - weight (jt.Var, 可选) : 一个手动指定每个类别的权重的张量。默认值：None\n        - ignore_index (int, 可选) : 指定一个值，在计算损失函数时忽略目标值中等于指定值的元素。默认值：-100\n        - reduction (string, 可选) : 指定如何减少损失：'none' (不减少) | 'mean' (加权减少) | 'sum' (简单元素相加)。默认值： ``'mean'``\n\n    返回值:\n        jt.Var: 一个标量张量，表示负对数似然损失。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([[0.1, 0.1, 0.8], [0.2, 0.4, 0.4], [0.2, 0.6, 0.2]])\n        >>> target = jt.array([3, 2, 2])\n        >>> nn.nll_loss(output, target)\n        jt.Var([-0.3], dtype=float32)\n\n"
     assert output.ndim<=2 and output.ndim>0 and target.ndim==1
     n_classes = output.shape[-1]
     assert weight is None or weight.numel()==n_classes
@@ -493,6 +348,7 @@ class L1Loss(Module):
         return l1_loss(output, target)
 
 def binary_cross_entropy_with_logits(output, target, weight=None, pos_weight=None, size_average=True):
+    "\n该函数用于计算具有logits的二元交叉熵损失，基于Sigmoid激活函数实现。该函数对于解决数据不平衡问题是非常有效的。\n\n    参数:\n        - output (jt.Var) : 网络的输出张量，元素float32/float64，形状用[batch_size,*]表示。其中'*'代表任意的其他尺寸。\n        - target (jt.Var) : 目标张量，类型同output，形状与output相同。\n        - weight (jt.Var, 可选) : 一个手动指定每个类别的权重的张量。默认值：None\n        - pos_weight (jt.Var, 可选): 正样本的权重。如果给定，必须为张量，而与output形状相同，且类型与output类型相同。默认值：None\n        - size_average (bool, 可选): 如果为True，返回交叉熵损失的平均值。否则，返回交叉熵损失的总和。默认值：True\n\n    返回值:\n        jt.Var: 与output形状相同的二元交叉熵损失张量，具有同样的数据类型。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> output = jt.array([0.2, 1, -0.3])\n        >>> target = jt.array([3, 2, 2])\n        >>> nn.binary_cross_entropy_with_logits(output, target)\n        jt.Var([0.22191863], dtype=float32)\n\n"
     max_val = jt.clamp(-output,min_v=0)
     if pos_weight is not None:
         log_weight = (pos_weight-1)*target + 1
@@ -517,6 +373,7 @@ class BCEWithLogitsLoss(Module):
         return binary_cross_entropy_with_logits(output,target,self.weight,self.pos_weight,self.size_average)
 
 def softmax(x, dim=None, log=False):
+    "\n此函数接收一个输入张量x，并在指定的维度上应用softmax函数。如果参数\"log\"为True，则应用log_softmax。具体公式如下：\n\n    给定输入 :math:`x` ， softmax函数可以计算为：\n\n    .. math::\n        \\text{softmax}(x_i) = \\frac{\\exp(x_i)}{\\sum_j \\exp(x_j)}\n\n    当参数\"log\"为True时，log_softmax函数可以计算为：\n\n    .. math::\n        \\text{log\\_softmax}(x_i) = \\log(\\frac{\\exp(x_i)}{\\sum_j \\exp(x_j)})\n\n    参数:\n        - x (jt.Var): 输入张量，可以是任意维度。\n        - dim (int or tuple(int), 可选): 指定softmax操作的维度。不指定时，操作会应用于所有的元素上。默认值：None\n        - log (bool, optional): 如果设为True，则应用log_softmax操作，否则应用普通的softmax操作。默认值：False\n\n    返回值:\n        jt.Var: 与输入 x 形状相同的张量，其各元素 :math:`y_i` 等于输入x在dim维度上的softmax或者log_softmax的结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.8, 0.2, 0.5])\n        >>> nn.softmax(x)\n        jt.Var([0.4367518  0.23969446 0.32355368], dtype=float32)\n\n"
     import jittor.other.code_softmax as code_softmax
     if code_softmax.can_softmax_v1(x, dim) and jt.compiler.is_cuda:
         return code_softmax.softmax_v1(x, log)
@@ -532,14 +389,17 @@ def softmax(x, dim=None, log=False):
 jt.Var.softmax = softmax
 
 def log_softmax(x,dim=None):
+    "\n对输入的张量进行softmax操作并取对数:\n\n    .. math::\n        \\text{log\\_softmax}(x_i) = \\log(\\frac{\\exp(x_i)}{\\sum_j \\exp(x_j)})\n\n    参数:\n        - x (jt.Var): 输入张量，可以是任意维度。\n        - dim (int or tuple(int), 可选): 指定softmax操作的维度。不指定时，操作会应用于所有的元素上。默认值：None\n\n    返回值:\n        jt.Var: 与输入 x 形状相同的张量，其各元素 :math:`y_i` 等于输入x在dim维度上的log_softmax的结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.8, 0.2, 0.5])\n        >>> nn.log_softmax(x)\n        jt.Var([-0.8283902 -1.4283903 -1.1283902], dtype=float32)\n\n"
     return softmax(x,dim=dim, log=True)
 jt.Var.log_softmax = log_softmax
 
 def log_sigmoid(x):
+    "\n将输入的张量x传入sigmoid函数后，然后对其求对数。使用此函数可以帮助我们在进行深度学习或者神经网络计算中，更好地平滑输入值。\n\n    .. math::\n         log\\_sigmoid(x) = log\\left(\\frac{1}{1+e^{-x}}\\right)\n\n    参数:\n        - x (jt.Var): 输入张量，可以是任意维度。\n\n    返回值:\n        jt.Var: 与输入 x 形状相同的张量，其各元素等于输入x在dim维度上的log_sigmoid的结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([0.8, 0.2, 0.5])\n        >>> nn.log_sigmoid(x)\n        jt.Var([-0.37110066 -0.5981389  -0.47407696], dtype=float32)\n\n"
     return jt.log(jt.sigmoid(x))
 jt.Var.log_sigmoid = log_sigmoid
 
 def logsumexp(x, dim, keepdims=False, keepdim=False):
+    "\n计算输入张量x在给定维度上的对数和指数。实现的是下列公式，其中，:math:`x_{i}` 是 `x` 的元素：\n\n    .. math::\n        log(\\sum_{i}exp(x_{i}))\n\n    参数:\n        - x (jt.Var): 输入张量，可以是任意维度。\n        - dim (int 或 tuple of int): 用于指定计算logsumexp的行或列轴的编号或元组\n        - keepdims (Boolean, 可选): 如果此选项设为 True，那么求和张量的选定维度将被保留。默认值：False\n        - keepdim (Boolean, 可选): 与keepdims相同。默认值：False\n\n    返回值:\n        jt.Var: x在给定维度上计算对数和指数得到的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.ones(3,3)\n        >>> nn.logsumexp(x, dim=0)\n        jt.Var([2.0986123 2.0986123 2.0986123], dtype=float32)\n        >>> nn.logsumexp(x, dim=0, keepdims=True)\n        jt.Var([[2.0986123 2.0986123 2.0986123]], dtype=float32)\n\n"
     return x.exp().sum(dim, keepdim or keepdims).log()
 jt.Var.logsumexp = logsumexp
 
@@ -571,6 +431,7 @@ class Dropout(Module):
         return output
 
 def dropout(x,p=0.5,is_train=False):
+    "\n该函数实现了dropout操作。此函数会在训练阶段随机将输入张量x中约p比例的元素设置为0，从而防止过拟合。在测试阶段，此函数会返回原始的输入张量x，而不进行dropout操作。在数学上，dropout操作表示如下，这里的 :math:`\\frac{x}{1-p}` 操作确保了在训练和测试阶段，该层的输出的期望保持不变：\n\n    .. math::\n        y = \\begin{cases}\n        0 & 概率 p \\\\\n        \\frac{x}{1-p} & 概率1-p\n        \\end{cases}\n\n    参数:\n        - x (jt.Var): 输入张量\n        - p (float, 可选): dropout的概率。它是一个介于0和1之间的float值，表示每个元素被设置为0的概率。例如，如果p=0.5，那么输入张量中约有一半的元素会被设置为0。默认值: 0.5\n        - is_train (bool, 可选): 一个布尔值，表示是否在训练模式下运行。如果 ``is_train==True`` ，那么会执行dropout操作；如果is_train=False，那么返回原始的输入张量x。默认值: False\n\n    返回值:\n        jt.Var: 一个和输入张量x相同形状的张量，为x执行完dropout操作的结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.ones(3,3)\n        >>> nn.dropout(x)\n        jt.Var([[1. 1. 1.]\n                [1. 1. 1.]\n                [1. 1. 1.]], dtype=float32)\n        >>> nn.dropout(x, is_train=True) \n        jt.Var([[0. 0. 0.]\n                [0. 2. 2.]\n                [0. 2. 2.]], dtype=float32)\n\n"
     return Dropout(p=p,is_train=is_train)(x)
 
 class Dropout2d(Module):
@@ -599,6 +460,7 @@ class Dropout2d(Module):
         return output
 
 def dropout2d(x,p=0.5,is_train=False):
+    "\n对2D输入数据执行Dropout操作。此函数会在训练阶段随机将输入张量x中约p比例的元素设置为0，从而防止过拟合。通过这种方式，Dropout可以等同于对大量不同的神经网络进行模型平均。\n\n    在测试阶段，此函数会返回原始的输入张量x，而不进行dropout操作。在数学上，dropout操作表示如下，这里的 :math:`\\frac{x}{1-p}` 操作确保了在训练和测试阶段，该层的输出的期望保持不变，y是输出结果，x是输入数据：\n\n    .. math::\n        y = \\begin{cases}\n        0 & 概率 p \\\\\n        \\frac{x}{1-p} & 概率1-p\n        \\end{cases}\n\n    参数:\n        - x (jt.Var): 输入张量，应为2D的Jittor数组。\n        - p (float, 可选): dropout的概率。它是一个介于0和1之间的float值，表示每个元素被设置为0的概率。例如，如果p=0.5，那么输入张量中约有一半的元素会被设置为0。默认值: 0.5\n        - is_train (bool, 可选): 一个布尔值，表示是否在训练模式下运行。如果is_train=True ，那么会执行dropout操作；如果is_train=False，那么返回原始的输入张量x。默认值: False\n\n    返回值:\n        jt.Var: 一个和输入张量x相同形状的张量，为x执行完dropout操作的结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([[0, 0.5, 1.0], [-0.3, 0.5, 0.8]])\n        >>> nn.dropout2d(x, 0.2, True) \n        jt.Var([[[ 0.     0.625  1.25 ]\n                [-0.375  0.625  1.   ]]], dtype=float32)\n        >>> nn.dropout2d(x)            \n        jt.Var([[ 0.   0.5  1. ]\n                [-0.3  0.5  0.8]], dtype=float32)\n\n"
     return Dropout2d(p=p,is_train=is_train)(x)
 
 class DropPath(Module):
@@ -624,6 +486,7 @@ class DropPath(Module):
         return output
 
 def droppath(x,p=0.5,is_train=False):
+    "\n这个函数通过DropPath算法实现对输入的影响，其中概率参数p和训练状态is_train可以被调整。其数学表示如下，其中 :math:`y_i` 是输出张量, :math:`x_i` 是输入张量, :math:`z_i` 是从均匀分布[0, 1]中随机采样的一个随机值：\n\n    .. math::\n        y_i = \\begin{cases}\n        0, & \\text{if } z_i < p \\text{ and } \\text{is\\_train} = \\text{True} \\\\\n        x_i, & \\text{otherwise}\n        \\end{cases}\n\n    参数:\n        - x (jt.Var): 输入张量\n        - p (float, 可选): DropPath算法的概率参数。默认值: 0.5\n        - is_train (bool, 可选): 一个布尔值，表示是否在训练模式下运行。如果is_train=True ，那么会执行dropout操作；如果is_train=False，那么返回原始的输入张量x。默认值: False\n\n    返回值:\n        jt.Var: 一个和输入张量x相同形状的张量，为x执行完DropPath操作的结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([[0, 0.5, 1.0], [-0.3, 0.5, 0.8]])\n        >>> nn.droppath(x, is_train=True) \n        jt.Var([[ 0.  1.  2.]\n                [-0.  0.  0.]], dtype=float32)\n        >>> nn.droppath(x)  \n        jt.Var([[ 0.   0.5  1. ]\n                [-0.3  0.5  0.8]], dtype=float32)\n\n"
     return DropPath(p=p,is_train=is_train)(x)
 
 class Linear(Module):
@@ -641,6 +504,7 @@ class Linear(Module):
         return x
     
 def linear(x, weight, bias=None):
+    "\n对输入x进行线性变换。此函数返回x与权重weight的矩阵乘法的结果，如果传入了偏置bias，则在进行矩阵乘法后还会加上偏置: :math:`x\\ *\\ weight^T + bias`\n\n    参数:\n        - x (jittor.Var): 输入张量，大小可以是(batch_size, input_dim)\n        - weight (jittor.Var): 权重矩阵，大小可以是(batch_size, input_dim)\n        - bias (jittor.Var, 可选): 偏置向量，大小可以是(output_dim,)。默认值: None\n\n    返回值:\n        jittor.Var: 线性变换后的结果，大小可以是(batch_size, output_dim)\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([[0, 0.5, 1.0], [-0.3, 0.5, 0.8]])\n        >>> weight = jt.ones(3,3)     \n        >>> nn.linear(x, weight)   \n        jt.Var([[1.5 1.5 1.5]\n                [1.  1.  1. ]], dtype=float32)\n\n"
     ''' Returns x * weight^T
     '''
     x = matmul_transpose(x, weight)
@@ -689,6 +553,7 @@ class BatchNorm(Module):
 BatchNorm3d = BatchNorm2d = BatchNorm1d = BatchNorm
 
 def batch_norm(x, running_mean, running_var, weight=1, bias=0, training=False, momentum=0.1, eps=1e-05):
+    "\n对输入的张量进行批量归一化。批量归一化是一种用于提高神经网络性能和稳定性的技术。该操作可以使网络处理的内部协变量变化变得更小。 在正向传播时，该层会将输入中心化（均值为0）和规范化（方差为1），然后将结果乘以比例因子 gamma 并加上偏移量 beta。在反向传播时，本层将计算当前批次的均值和方差的梯度。计算方式如下:\n\n    .. math::\n\n        norm_x = \\frac{x - running\\_mean} {\\sqrt{running\\_var + eps}} * weight + bias\n\n\n    参数:\n\n        - `x` (jittor.Var) : 输入张量。维度 (batch_size, num_channels, ..)。\n        - `running_mean` (jittor.Var) : 运行期间的平均值，用于将输入中心化。维度和 num_channels 相同。\n        - `running_var` (jittor.Var) :  运行期间的方差，用于将输入规范化。维度和 num_channels 相同。\n        - `weight` (float，可选) : 批量归一化的缩放系数。默认值: 1\n        - `bias` (float，可选) : 批量归一化的平移系数。默认值: 0\n        - `training` (bool，可选) : 为 True 时， 化函数使用在线定义的计数方法对batch数据进行归一化。只有当你使用的模型在每次训练时修改输入的统计数据,并保存更新后的统计数据以备后续使用时，才需要使用该参数。如果训练数据在每一次训练过程中都保持不变，就无需使用该参数。默认值: False\n        - `momentum` (float, 可选) : 动量值，有效值为 [0,1] 。默认值: 0.1\n        - `eps` (float，可选) : 用作分母以增加数值稳定性的项。默认值: 1e-5\n\n    返回值:\n        jittor.Var: 线性变换后的结果，大小可以是(batch_size, output_dim)\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([[0, 0.5, 1.0], [-0.3, 0.5, 0.8]])\n        >>> running_mean = jt.mean(x, dim=0) # 实际应用时，自行计算\n        >>> running_var = jt.var(x, dim=0) # 实际应用时，自行计算\n        >>> nn.batch_norm(x, running_mean, running_var) \n        jt.Var([[ 0.99977785  0.          0.9995003 ]\n                [-0.99977785  0.         -0.99950075]], dtype=float32\n\n"
     dims = [0]+list(range(2,x.ndim))
     assert not training
     w = weight / jt.sqrt(running_var+eps)
@@ -1152,35 +1017,7 @@ class Conv1d_sp(Linear):
         return x
 
 def conv2d(x, weight, bias=None, stride=1, padding=0, dilation=1, groups=1):
-    ''' Applies a 2D convolution over an input signal composed of several input planes.
-
-    :param x: the input image
-    :type x: jt.Var
-
-    :param weight: the convolution kernel
-    :type weight: jt.Var
-
-    :param bias: the bias after convolution
-    :type bias: jt,Var, optional
-
-    :param stride: Stride of the convolution. Default: 1
-    :type stride: int or tuple, optional
-
-    :param padding: Padding added to all four sides of the input. Default: 0
-    :type padding: int or tuple, optional
-
-    :param dilation: Spacing between kernel elements. Default: 1
-    :type dilation: int or tuple, optional
-
-    :param groups: Number of blocked connections from input channels to output channels. Default: 1
-    :type groups: int, optional
-
-    Example:
-
-    >>> x = jt.randn(4, 24, 100, 100)
-    >>> w = jt.randn(32, 24, 3, 3)
-    >>> y = nn.conv2d(x, w)
-    '''
+    "\n将一个2D卷积应用于由多个输入平面组成的输入信号。\n\n    参数:\n        - `x` (jittor.Var) : 输入张量\n        - `weight` (jittor.Var) : 卷积核\n        - `bias` (jittor.Var，可选) : 卷积后的偏置。默认值：None\n        - `stride` (int或tuple，可选) : 卷积的步长。默认值: 1\n        - `padding` (int或tuple, 可选) : 输入的四周添加的填充长度。默认值: 0\n        - `dilation` (int或tuple，可选) : 卷积核元素之间的间距。默认值: 1\n        - `groups` (int，可选) : 输入通道和输出通道之间的阻塞连接数。默认值: 1\n\n    返回值:\n        jittor.Var: 执行2D卷积之后的结果张量\n\n    代码示例：\n        >>> x = jt.randn(4, 24, 100, 100)\n        >>> w = jt.randn(32, 24, 3, 3)\n        >>> y = nn.conv2d(x, w)\n\n"
     padding = _pair(padding)
     stride = _pair(stride)
     dilation = _pair(dilation)
@@ -1241,35 +1078,7 @@ def conv2d(x, weight, bias=None, stride=1, padding=0, dilation=1, groups=1):
 conv = conv2d
 
 def conv3d(x, weight, bias=None, stride=1, padding=0, dilation=1, groups=1):
-    ''' Applies a 3D convolution over an input signal composed of several input planes.
-
-    :param x: the input volume
-    :type x: jt.Var
-
-    :param weight: the convolution kernel
-    :type weight: jt.Var
-
-    :param bias: the bias after convolution
-    :type bias: jt,Var, optional
-
-    :param stride: Stride of the convolution. Default: 1
-    :type stride: int or tuple, optional
-
-    :param padding: Padding added to all four sides of the input. Default: 0
-    :type padding: int or tuple, optional
-
-    :param dilation: Spacing between kernel elements. Default: 1
-    :type dilation: int or tuple, optional
-
-    :param groups: Number of blocked connections from input channels to output channels. Default: 1
-    :type groups: int, optional
-
-    Example:
-
-    >>> x = jt.randn(4, 24, 50, 50, 50)
-    >>> w = jt.randn(32, 24, 3, 3, 3)
-    >>> y = nn.conv2d(x, w)
-    '''
+    "\n该函数实现了3D卷积运算。此函数首先将padding、stride、dilation参数进行处理。然后计算输出通道的数量。如果支持cuda并且使用cudnn，则进行cuda加速的卷积运算。如果不支持cuda或者groups参数不为1，则进行常规的卷积运算。最后，如果提供了bias参数，则在卷积后加上偏差。最终返回卷积后的结果。\n\n    参数:\n        - `x` (jittor.Var) : 输入张量\n        - `weight` (jittor.Var) : 卷积核\n        - `bias` (jittor.Var，可选) : 卷积后的偏置，如未输入默认无偏置。默认值：None\n        - `stride` (int或tuple，可选) : 卷积的步长。默认值: 1\n        - `padding` (int或tuple, 可选) : 输入的四周添加的填充长度。默认值: 0\n        - `dilation` (int或tuple，可选) : 卷积核元素之间的间距。默认值: 1\n        - `groups` (int，可选) : 输入通道和输出通道之间的阻塞连接数。默认值: 1\n\n    返回值:\n        jittor.Var: 执行2D卷积之后的结果张量\n\n    代码示例：\n        >>> x = jt.randn(4, 24, 50, 50, 50)\n        >>> w = jt.randn(32, 24, 3, 3, 3)\n        >>> y = nn.conv3d(x, w)\n\n"
     padding = _triple(padding)
     stride = _triple(stride)
     dilation = _triple(dilation)
@@ -1472,6 +1281,7 @@ class ConvTranspose3d(Module):
         return conv_transpose3d(x, self.weight, self.bias, self.stride, self.padding, self.output_padding, self.group, self.dilation)
 
 def conv_transpose(input, weight, bias=None, stride=1, padding=0, output_padding=0, groups=1, dilation=1):
+    "\n对输入的数据进行转置卷积操作。对输入的每个channel进行转置卷积操作，也就是通过在输入的每个channel上作卷积，得到若干子矩阵，将这些子矩阵线性映射并相加后得到的结果。\n\n    参数:\n        - `input` (jittor.Var) : 输入张量，shape为(N, C, H, W)， N为batch size(每次处理的大小)，C为通道数，H和W为高和宽\n        - `weight` (jittor.Var) : 卷积核权重，shape为(i, o, h, w)， i为输入通道数，o为输出通道数，h和w分别为卷积核的高和宽\n        - `bias` (jittor.Var，可选) : 卷积后的偏置，除非为None，否则其shape应当为(o,)。默认值：None\n        - `stride` (int或tuple，可选) : 卷积的步长，单位为像素。默认值: 1\n        - `padding` (int或tuple, 可选) : 输入的四周添加的填充长度，单位为像素。默认值: 0\n        - `output_padding` (int或tuple, 可选) : 输出的四周添加的填充长度，表示在转置卷积操作结束后添加到输出的零填充的数额，单位为像素。默认值: 0\n        - `groups` (int，可选) : 输入通道和输出通道之间的阻塞连接数。默认值: 1\n        - `dilation` (int或tuple，可选) : 卷积核元素之间的间距。默认值: 1\n\n    返回值:\n        jittor.Var: 对输入的数据进行转置卷积操作后的结果，shape为(N, o, h_out, w_out)\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.ones(2,3,4,5)            \n        >>> w = jt.ones(3,6,3,3)             \n        >>> nn.conv_transpose(x,w).shape\n        [2,6,6,7,]\n\n"
     if groups == 1:
         x = input
         N,C,H,W = x.shape
@@ -1559,6 +1369,7 @@ def conv_transpose(input, weight, bias=None, stride=1, padding=0, output_padding
 conv_transpose2d = conv_transpose
 
 def conv_transpose3d(input, weight, bias=None, stride=1, padding=0, output_padding=0, groups=1, dilation=1):
+    "\n对输入数据执行三维反卷积操作。此操作也称为转置卷积，它将卷积核应用于输入数据，以创建具有更大尺寸的输出。\n\n    参数:\n        - `input` (jittor.Var) : 形状为(N, C, D, H, W)的输入张量，其中N是批量大小，C是输入通道数，D是深度，H是高度，W是宽度。\n        - `weight` (jittor.Var) : 形状为(i, o, d, h, w)的卷积核权重张量，其中i是输入通道数，o是输出通道数，d，h和w分别是深度，高度和宽度。\n        - `bias` (jittor.Var，可选) : 形状为(o,)的偏置张量。如果没有指定，将不使用任何偏置。默认值：None\n        - `stride` (int或tuple，可选) : 卷积的步长，单位为像素。如果是tuple，则按照(d, h, w)的顺序设定步长。默认值: 1\n        - `padding` (int或tuple, 可选) : 输入的四周添加的填充长度，单位为像素。如果是tuple，则按照(d, h, w)的顺序设定填充。默认值: 0\n        - `output_padding` (int或tuple, 可选) : 输出的四周添加的填充长度，表示在转置卷积操作结束后添加到输出的零填充的数额，单位为像素。如果是tuple，则按照(d, h, w)的顺序设定输出填充。默认值: 0\n        - `groups` (int，可选) : 输入通道和输出通道之间的阻塞连接数。默认值: 1\n        - `dilation` (int或tuple，可选) : 卷积核元素之间的间距。如果是元组，则按照(d, h, w)的顺序设定间距。默认值: 1\n\n    返回值:\n        jittor.Var: 对输入的数据进行转置卷积操作后的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> input = jt.ones(1,1,3,3,3) \n        >>> weight = jt.ones(1,1,2,2,2) \n        >>> nn.conv_transpose3d(input, weight).shape\n        [1,1,4,4,4,]\n\n"
     x = input
     N,C,D,H,W = x.shape
     i,o,d,h,w = weight.shape
@@ -1604,6 +1415,7 @@ def conv_transpose3d(input, weight, bias=None, stride=1, padding=0, output_paddi
 conv_transpose2d = conv_transpose
 
 def pad(x,padding, mode='constant', value=0):
+    "\n对给定的输入张量进行填充。填充方法有四种方式: \n\n    - 常数填充（'constant'，在每个维度的两侧用固定值填充）\n    - 复制填充（'replicate'，在每个维度的两侧用输入张量的反射（无重复）进行填充）\n    - 反射填充（'reflect'，在每个维度的两侧用输入张量的边缘值进行填充）\n    - 环形填充（'circular'，在每个维度的两侧用输入张量的环形复制进行填充）。\n\n    参数:\n        - `x` (jittor.Var) : 输入的张量\n        - `padding` (list[int]) : 填充的尺寸，list长度必须为偶数，且必须小于等于输入张量的维度的两倍。偶数索引为左填充，奇数索引为右填充。\n        - `mode` (str, 可选) : 填充模式，有‘constant'，‘replicate'，‘reflect'和‘circular'四种选择，默认值: 'constant'\n        - `value` (int或float，可选) : 当填充模式为'constant'时，使用此值进行填充。默认值: 0\n\n    返回值:\n        jittor.Var: 填充后的张量\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.ones(3,3)\n        >>> nn.pad(x, [1,2]) \n        jt.Var([[0. 1. 1. 1. 0. 0.]\n                [0. 1. 1. 1. 0. 0.]\n                [0. 1. 1. 1. 0. 0.]], dtype=float32)\n\n"
     assert mode in ['constant','replicate','reflect','circular'],'only support constant,replicate,reflect,circular pad'
     assert len(padding)%2==0 and len(padding)//2<=x.ndim
 
@@ -1754,6 +1566,7 @@ class Embedding(Module):
         return res
 
 def embedding(input, weight):
+    "\n这个函数实现了编译嵌入。接收一个矩阵索引作为输入，并返回相应的权重。\n\n    参数:\n        - input (jittor.Var) : 索引张量，表示要查询权重的索引\n        - weight (jittor.Var) : 权重张量，表示需要查询的权重\n\n    返回值:\n        jittor.Var: 返回一个同权重数据类型的张量，尺寸为(input.shape[0], weight.shape[1])，表示索引所代表的权重。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> weight = jt.array([[0,0,3,1],[2,0,3,1],[0,0,0,0]])\n        >>> input = jt.array([0,1,2])  \n        >>> nn.embedding(input, weight) \n        jt.Var([[0 0 3 1]\n                [2 0 3 1]\n                [0 0 0 0]], dtype=int32)\n\n"
     return weight[input]
 
 class PixelShuffle(Module):
@@ -1784,6 +1597,7 @@ class Sigmoid(Module):
         return x.sigmoid()
 
 def softplus(x,beta=1.0,threshold=20.0):
+    "\nSoftplus函数实现。Softplus函数是一种平滑函数，常用于构建深度神经网络的非线性变化层，对x的过大过小值进行了阈值剪裁以提高数值稳定性。具体的数学形式如下:\n\n    .. math::\n        y=\\left{\\{}\\begin{array}{11}\\frac{1}{\\beta} * log(1 + exp(\\beta * x)), & \\beta * x <= threshold\\\\\n        x - \\frac{threshold}{\\beta}, & \\beta * x > threshold\\end{array}\\right.\n\n    \n\n    参数:\n        - x (jittor.Var) : 输入张量\n        - beta (float, 可选) : 控制函数曲线的剧烈程度，默认值: 1.0\n        - threshold (float, 可选): 阈值，当beta * x大于threshold时，会对x进行截断，默认值: 20.0\n\n    返回值:\n        jittor.Var: x应用Softplus函数之后的结果张量，与输入x形状相同\n\n    代码示例：\n        >>> import jittor as jt\n        >>> x = jt.array([1.0, 2.0, 3.0])\n        >>> jt.nn.softplus(x)\n        jt.Var([1.3132616 2.126928  3.0485873], dtype=float32)\n\n"
     return 1 / beta * jt.log(1 + (beta * x).minimum(threshold).exp()) + \
         (x - threshold/beta).maximum(0.0)
 
@@ -1819,6 +1633,7 @@ class Resize(Module):
 
 
 def _bicubic(x, a, func):
+    "\n该函数执行双三次插值计算。依据给定的参数``x``和``a``以及插值函数索引``func``，返回相应的插值结果。\n\n    参数:\n        - x (float) : 插值位置的输入值\n        - a (float) : 插值函数的参数\n        - func (int): 一共有两种插值函数，func用于选择执行哪个插值函数，可能的值为1或2。如果func不是1或2，则返回0\n\n    返回值:\n        float: 双三次插值的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> jt.nn._bicubic(0.2, 0.5, 1) \n        jt.Var([0.88], dtype=float32)\n\n"
     # normal ver
     if func == 1:
         return (a+2)*(jt.abs(x)**3)-(a+3)*(x**2)+1
@@ -1828,6 +1643,7 @@ def _bicubic(x, a, func):
 
 
 def _interpolate(img, x, y, ids, mode):
+    "\n这个函数用于对图像进行插值。\n\n    参数:\n        - img (jittor.Var) : 输入图像张量\n        - x (jittor.Var) : 图像的x坐标列表\n        - y (jittor.Var) : 图像的y坐标列表\n        - ids (jittor.Var): 图像的id列表\n        - mode (str, 可选): 插值模式，有'nearest'，'bilinear' 和 'bicubic'三种选择，'nearest'表示最近邻插值，'bilinear'表示双线性插值，'bicubic'表示双三次插值。如果插值模式设置错误，会抛出ValueError。默认值: 'nearest'\n\n    返回值:\n        jittor.Var: 插值后的图像张量\n\n"
     if mode == "nearest":
         return img.reindex([*ids, x.floor_int(), y.floor_int()])
     if mode == "bilinear":
@@ -1996,11 +1812,13 @@ def affine_grid_generator_4D(theta,N,C,H,W,align_corners):
      return grid.reshape(N, H, W, 2)
 
 def affine_grid_generator_5D(theta,N,C,D,H,W,align_corners):
+    "用于生成一个五维的仿射网格。该函数首先通过对给定的仿射矩阵和基础网格进行矩阵乘法，然后通过变换生成新的仿射网格。\n\n参数:\n    theta (Var): 仿射变换矩阵，形状为 (N, 3, 4)\n    N (int): 输出网格的批次大小\n    C (int): 输出网格的通道数\n    D (int): 输出网格的深度\n    H (int): 输出网格的高度\n    W (int): 输出网格的宽度\n    align_corners (bool): 是否对齐角点\n\n返回:\n    生成的五维仿射网格 (Var)，大小为 (N, D, H, W, 3)\n\n示例:\n  .. code-block:: python\n\n    theta = jt.array([[[1., 0, 0, 0], [0, 1., 0, 0], [0, 0, 1., 0]]])\n    N = 1\n    C = 3\n    D = 4\n    H = 5\n    W = 5\n    align_corners = True\n    grid = affine_grid_generator_5D(theta, N, C, D, H, W, align_corners)\n    print(grid.shape)  # Output: (1, 4, 5, 5, 3)\n\n"
     base_grid = make_base_grid_5D(theta, N, C, D, H, W, align_corners)
     grid = jt.nn.bmm(base_grid.reshape(N, D * H * W, 4),theta.transpose(0,2,1))
     return grid.reshape(N, D, H, W, 3)
 
 def affine_grid(theta, size, align_corners=False):
+    "根据给定的尺寸生成一个4D或5D的仿射网格。\n\n参数:\n    theta (Var): 仿射变换矩阵，对于4D网格，形状为 (N, 2, 3)；对于5D网格，形状为 (N, 3, 4)\n    size (list of int): 定义输出网格的尺寸，长度为4时表示4D网格，长度为5时表示5D网格\n    align_corners (bool): 是否对齐角点，默认为 False\n    \n代码示例:\n .. code-block:: python\n\n    import jittor as jt\n\n    # 4D网格示例\n    theta_4d = jt.array([[[1., 0, 0], [0, 1., 0]]])\n    size_4d = [1, 3, 5, 5]\n    grid_4d = affine_grid(theta_4d, size_4d)\n    print(grid_4d.shape)  # Output: (1, 5, 5, 2)\n\n    # 5D网格示例\n    theta_5d = jt.array([[[1., 0, 0, 0], [0, 1., 0, 0], [0, 0, 1., 0]]])\n    size_5d = [1, 3, 4, 5, 5]\n    grid_5d = affine_grid(theta_5d, size_5d)\n    print(grid_5d.shape)  # Output: (1, 4, 5, 5, 3)\n    \n返回值:\n    Var: 生成的仿射网格，形状为 (N, C, H, W, 2) 或 (N, C, D, H, W, 3)，具体取决于 `size` 的长度\n\n"
     assert str(theta.dtype) in ['float','float32','float64']
     assert min(size)>0
     assert len(size) in [4,5]    
@@ -2013,6 +1831,7 @@ def affine_grid(theta, size, align_corners=False):
 
 
 def grid_sampler_unnormalize(coord,size,align_corners):
+    "将归一化坐标转换为未归一化的坐标。该函数根据 `align_corners` 参数的值来决定坐标转换的方式。\n\n当 `align_corners` 为 True 时，转换公式为 `((coord + 1) / 2) * (size - 1)`。\n当 `align_corners` 为 False 时，转换公式为 `((coord + 1) * size - 1) / 2`。\n\n参数:\n    coord (Var): 归一化坐标，可以是任意形状的张量\n    size (int 或 list/tuple of int): 目标尺寸，可以是单个整数或整数列表/元组\n    align_corners (bool): 控制坐标转换方式的布尔值\n\n返回值:\n    Var: 转换后的未归一化坐标，形状与输入 `coord` 相同\n\n代码示例:\n.. code-block:: python\n\n    import jittor as jt\n\n    coord = jt.array([-1., 0, 1])\n    size = 100\n    align_corners = True\n    unnormalized_coord = grid_sampler_unnormalize(coord, size, align_corners)\n    print(unnormalized_coord)  # Output: [  0.  49.5  99. ]\n\n"
     if align_corners:
         #unnormalize coord from [-1, 1] to [0, size - 1]
         return ((coord + 1) / 2) * (size - 1)
@@ -2022,9 +1841,11 @@ def grid_sampler_unnormalize(coord,size,align_corners):
 
 
 def clip_coordinates(x,clip_limit):
+    "将输入坐标 `x` 裁剪到 `[0, clip_limit - 1]` 的范围内。\n\n参数:\n    x (Var): 需要裁剪的坐标\n    clip_limit (int): 裁剪的上限\n\n返回值:\n    裁剪后的坐标(Var):其形状与输入 `x` 相同。\n\n代码示例:\n    >>> import jittor as jt\n    >>> x = jt.array([-5, 0, 5, 10, 15])\n    >>> clip_limit = 10\n    >>> clipped_x = clip_coordinates(x, clip_limit)\n    >>> print(clipped_x)  \n    jt.Var([0 0 5 9 9], dtype=int32)\n\n"
     return jt.clamp(x,min_v=0,max_v=clip_limit-1)
 
 def reflect_coordinates(x,twice_low,twice_high):
+    "对输入坐标 `x` 进行反射操作。\n\n首先将输入`x`减去`twice_low / 2`，使其落在零和`twice_high - twice_low`的范围内，然后使用绝对值，取余数和取反操作来反射。\n .. math::\n\n    m = \\frac{twice\\_low}{2}\n   \n    span = \\frac{twice\\_high - twice\\_low}{2}\n    \n    flips = \\left\\lfloor \\frac{x - m}{span} \\right\\rfloor\n    \n    result1 = |(x - m) \\mod span| + m\n    \n    result2 = span - |(x - m) \\mod span| + m\n\n参数：\n    x (Var)：需要进行反射操作的坐标\n    twice_low (float)：反射区间两倍低点的值\n    twice_high (float)：反射区间两倍高点的值\n\n返回值：\n    反射后的坐标(Var):其形状与输入 `x` 相同。\n\n代码示例：\n  >>> import jittor as jt\n  >>> x = jt.array([1, 2, 3, 4, 5])\n  >>> twice_low = 2\n  >>> twice_high = 8\n  >>> reflected_x = reflect_coordinates(x, twice_low, twice_high)\n  >>> print(reflected_x)  \n  jt.Var([1. 2. 3. 4. 3.], dtype=float32)\n\n"
     if twice_low == twice_high:
         return jt.zeros_like(x)
     m = twice_low / 2
@@ -2043,6 +1864,7 @@ def reflect_coordinates(x,twice_low,twice_high):
 
 
 def grid_sampler_compute_source_index(coord,size,padding_mode,align_corners):
+    "计算网格采样器的源索引。\n\n首先将标准化坐标转化为原始坐标，然后进行裁剪或反射并裁剪以适应原始图像的边界。\n\n参数：\n    coord(Var)：归一化的坐标\n    size(int)：目标尺寸\n    padding_mode(str)：填充模式，'border' 或 'reflection'\n    align_corners(bool)：是否对齐角点\n\n返回值：\n    调整后的坐标(Var)，其形状与输入 `coord` 相同\n\n"
     coord = grid_sampler_unnormalize(coord, size, align_corners)
     if padding_mode == 'border':
         #clip coordinates to image borders
@@ -2060,6 +1882,7 @@ def grid_sampler_compute_source_index(coord,size,padding_mode,align_corners):
 
 
 def grid_sampler_3d(X,grid,mode,padding_mode,align_corners):
+    "对三维数据张量 `X` 进行基于网格的采样。\n\n根据提供的 `grid`，以及指定的采样模式、填充模式和对齐角点选项，对 `X` 进行采样。\n\n参数：\n    X(Var)：输入的三维数据张量，形状为 [N, C, inp_D, inp_H, inp_W]\n    grid(Var)：采样网格，形状为 [N, D, H, W, 3]\n    mode(str)：采样模式，'nearest' 或 'bilinear'\n    padding_mode(str)：填充模式，'border' 或 'reflection'\n    align_corners(bool)：是否对齐角点\n\n返回值：\n    采样后的数据张量(Var)，形状为 [N, C, D, H, W]\n\n代码示例：\n >>> import jittor as jt\n >>> from jittor.nn import grid_sampler_3d\n >>> N, C, D, H, W = 1, 1, 2, 2, 2\n >>> X = jt.array([[[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]]])\n >>> grid = jt.array([[[[[0, 0, 0], [1, 1, 1]], [[0, 1, 0], [1, 0, 1]]]]])\n >>> mode = 'bilinear'\n >>> padding_mode = 'border'\n >>> align_corners = True\n >>> sampled_X = grid_sampler_3d(X, grid, mode, padding_mode, align_corners)\n >>> print(sampled_X)\n jt.Var([[[[[0.16508093 0.25176302]\n        [0.12954207 0.27189574]]   \n        [[0.24352701 0.32800347]\n        [0.30734745 0.38710332]]]]], dtype=float32)\n >>> print(sampled_X) \n jt.Var([[[[[4.5 8. ]\n        [5.5 7. ]]]]], dtype=float32)\n >>> print(sampled_X.shape)\n [1, 1, 1, 2, 2]\n\n"
     N = X.shape[0]
     C = X.shape[1]
     inp_D = X.shape[2]
@@ -2102,6 +1925,7 @@ def grid_sampler_3d(X,grid,mode,padding_mode,align_corners):
         return o
 
 def grid_sampler_2d(X,grid,mode,padding_mode,align_corners):
+    "对二维数据张量 `X` 进行基于网格的采样。\n\n根据提供的 `grid`，以及指定的采样模式、填充模式和对齐角点选项，对 `X` 进行采样。\n\n参数：\n    X(Var)：输入的二维数据张量，形状为 [N, C, inp_H, inp_W]。\n    grid(Var)：采样网格，形状为 [N, H, W, 2]。\n    mode(str)：采样模式，'nearest' 或 'bilinear'。\n    padding_mode(str)：填充模式，'border' 或 'reflection'。\n    align_corners(bool)：是否对齐角点。\n\n返回值：\n    采样后的数据张量(Var)，形状为 [N, C, H, W]。\n\n代码示例：\n >>> import jittor as jt\n >>> from jittor.nn import grid_sampler_2d\n >>> N, C, H, W = 1, 1, 2, 2\n >>> X = jt.array([[[[1, 2], [3, 4]]]])\n >>> grid = jt.array([[[[0, 0], [1, 1]], [[0, 1], [1, 0]]]])\n >>> mode = 'bilinear'\n >>> padding_mode = 'border'\n >>> align_corners = True\n >>> sampled_X = grid_sampler_2d(X, grid, mode, padding_mode, align_corners)\n >>> print(sampled_X)\n jt.Var([[[[[4.5 8. ]\n        [5.5 7. ]]]]], dtype=float32)\n >>> print(sampled_X.shape)\n [1, 1, 2, 2]\n\n"
     N = X.shape[0]
     C = X.shape[1]
     inp_H = X.shape[2]
@@ -2138,6 +1962,7 @@ def grid_sampler_2d(X,grid,mode,padding_mode,align_corners):
 
 
 def grid_sampler(X, grid, mode, padding_mode, align_corners):
+    "对数据张量 ``X`` 进行基于网格的采样。该函数根据输入张量的维度自动选择使用二维或三维采样。\n\n参数：\n    X(Var)：输入的数据张量，维度为4或5，形状为 [N, C, H, W]（二维）或 [N, C, D, H, W]（三维）\n    grid(Var)：采样网格，维度与 ``X`` 相同，形状为 [N, H, W, 2]（二维）或 [N, D, H, W, 3]（三维）\n    mode(str)：采样模式，'nearest' 或 'bilinear'。\n    padding_mode(str)：填充模式，'border' 或 'reflection'\n    align_corners(bool)：是否对齐角点。\n\n返回值：\n    采样后的数据张量(Var)，形状为 [N, C, H, W]（二维）或 [N, C, D, H, W]（三维）\n\n给定输入张量 ``X`` 和流场 ``grid``，使用 ``X`` 的值和 ``grid`` 中指定的像素位置计算输出。\n\n当前仅支持空间（二维）和体积（三维）的 ``X``。\n\n在空间（二维）情况下，对于形状为 ``(N, C, inp_H, inp_W)`` 的 ``X`` 和形状为 ``(N, H, W, 2)`` 的 ``grid``，输出将具有形状 ``(N, C, H, W)``\n\n对于每个输出位置 ``output[n, :, h, w]``，大小为 2 的向量 ``grid[n, h, w]`` 指定了 ``X`` 中的像素位置 ``x`` 和 ``y``，这些位置用于插值计算输出值 ``output[n, :, h, w]``。在 5D 输入的情况下，``grid[n, d, h, w]`` 指定了用于插值计算 ``output[n, :, d, h, w]`` 的 ``x``、``y``、``z`` 像素位置。``mode`` 参数指定了用于采样输入像素的 ````nearest```` 或 ````bilinear```` 插值方法。\n\n如果 ``grid`` 的值超出 ``[-1, 1]`` 范围，相应的输出将按照 ``padding_mode`` 定义的方式处理。选项包括：\n\n* ``padding_mode=\"zeros\"``：对于越界的网格位置使用 `0`，\n* ``padding_mode=\"border\"``：对于越界的网格位置使用边界值\n* ``padding_mode=\"reflection\"``：对于越界的网格位置使用边界反射的值。对于远离边界的位置，将继续反射直到变为界内\n\n代码示例：\n >>> import jittor as jt\n >>> from jittor.nn import grid_sampler\n >>> N, C, D, H, W = 1, 1, 2, 2, 2\n >>> X = jt.array([[[[[1, 2], [3, 4]], [[5, 6], [7, 8]]]]])\n >>> grid = jt.array([[[[[0, 0, 0], [1, 1, 1]], [[0, 1, 0], [1, 0, 1]]]]])\n >>> mode = 'bilinear'\n >>> padding_mode = 'border'\n >>> align_corners = True\n >>> sampled_X = grid_sampler(X, grid, mode, padding_mode, align_corners)\n >>> print(sampled_X)\n jt.Var([[[[[0.16508093 0.25176302]\n         [0.12954207 0.27189574]]  \n         [[0.24352701 0.32800347]\n         [0.30734745 0.38710332]]]]], dtype=float32)\n >>> print(sampled_X) \n jt.Var([[[[[4.5 8. ]\n        [5.5 7. ]]]]], dtype=float32)\n >>> print(sampled_X.shape)\n [1, 1, 1, 2, 2]\n\n >>> N, C, H, W = 1, 1, 2, 2\n >>> X = jt.array([[[[1, 2], [3, 4]]]])\n >>> grid = jt.array([[[[0, 0], [1, 1]], [[0, 1], [1, 0]]]])\n >>> mode = 'bilinear'\n >>> padding_mode = 'border'\n >>> align_corners = True\n >>> sampled_X = grid_sampler_2d(X, grid, mode, padding_mode, align_corners)\n >>> print(sampled_X)\n jt.Var([[[[[4.5 8. ]\n        [5.5 7. ]]]]], dtype=float32)\n >>> print(sampled_X.shape)\n [1, 1, 2, 2]\n\n"
     assert X.dtype==grid.dtype
     assert ((X.ndim==4 or X.ndim==5) and X.ndim==grid.ndim)
     assert X.shape[0]==grid.shape[0] and grid.shape[-1]==X.ndim-2
@@ -2919,6 +2744,7 @@ class GRU(RNNBase):
         return h, h
 
 def bilinear(in1, in2, weight, bias):
+    "\n该函数对输入的in1, in2, weight和bias参数进行双线性（bilinear）运算。在数学上，双线性运算可以表示为：\n\n    .. math::\n        z = x * y + bias\n\n    其中，\n        - :math:`x` 是第一个输入矩阵和权重矩阵的乘积，形状为 [weight.shape[0], weight.shape[2]]\n        - :math:`y` 是扩展到与 :math:`x` 相同形状的第二个输入矩阵\n        - :math:`*` 表示矩阵乘法\n        - :math:`bias` 是偏置值\n\n    参数:\n        - in1（jittor.Var）：第一个输入张量\n        - in1（jittor.Var）：第二个输入张量\n        - weight（jittor.Var）：用于完成双线性运算的权重张量\n        -  bias（jt.Var，可选）：用于完成双线性运算的偏置值。如果该参数为None，则不使用偏置值。默认值: None\n\n    返回值:\n        jittor.Var: 完成双线性运算后的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> batch_size = 10\n        >>> feature_size = 5\n        >>> out_features = 7\n        >>> in1 = jt.randn(batch_size, feature_size)\n        >>> in2 = jt.randn(batch_size, feature_size)  \n        >>> weight = jt.randn(out_features,  feature_size, feature_size)\n        >>> bias = jt.randn(out_features)\n        >>> jt.nn.bilinear(in1, in2, weight, bias)\n\n"
     w = weight.transpose((1,0,2))
     w = w.reshape((w.shape[0], -1))
     x = jt.matmul(in1, w)
@@ -2953,6 +2779,7 @@ class Bilinear(Module):
 
 #TODO: support FFT2D only now.
 def _fft2(x, inverse=False):
+    "\n在Jittor中执行2维FFT操作。此函数仅在启用CUDA的条件下可用。输入 `x` 的形状必须为4维，且最后一维的大小为2，通常用于表示复数的实部和虚部。\n\n    数学公式:对于输入 `x` ，如果 `inverse` 为 ``False`` ，该函数执行以下FFT操作:\n        .. math::\n            Y[p, q] = \\sum_{m=0}^{M-1} \\sum_{n=0}^{N-1} x[m, n] \\exp\\left(-j\\frac{2 \\pi}{M N} (m p + n q)\\right)\n\n    如果 `inverse` 为 ``True`` ，则执行以下逆FFT操作:\n        .. math::\n            x[m, n] = \\frac{1}{M N} \\sum_{p=0}^{M-1} \\sum_{q=0}^{N-1} Y[p, q] \\exp\\left(j\\frac{2 \\pi}{M N} (m p + n q)\\right)\n\n    参数:\n        - x（jittor.Var）：输入的张量，要求为4维，且最后一维大小为2，通常用于表示复数的实部和虚部\n        - inverse（bool, 可选）：是否执行逆FFT操作。默认为 ``False`` ，表示执行正向FFT。如果为 ``True`` 则执行反向FFT。默认值: ``False``\n\n    返回值:\n        jittor.Var: 与输入 `x` 相同形状的复数张量，表示FFT结果。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> x = jt.random([2,3,4,2])\n        >>> y = jt.nn._fft2(x)\n        >>> y.shape\n        [2,3,4,2,]\n\n"
     assert(jt.flags.use_cuda==1)
     assert(len(x.shape) == 4)
     assert(x.shape[3] == 2)
@@ -3157,45 +2984,7 @@ class ComplexNumber:
 
 
 def one_hot(x: jt.Var, num_classes: int=-1) -> jt.Var:
-    ''' Returns the one_hot encoding of inputs.
-
-    :param x: class values of any shape
-    :type x: jt.Var with bool or integer dtype
-
-    :param num_classes: Total number of classes. If set to -1, the number of classes will be inferred as one greater than the largest class value in the input tensor.
-    :type num_classes: int, optional
-
-    :return: a Var with one more dimension with 1 values at the index 
-    of last dimension indicated by the input, and 0 everywhere else.
-    :rtype: jt.Var
-
-    .. note::
-        if the values in x are greater than num_class or less than 0, 
-        the returned one_hot will be all zeros.
-
-    Example:
-        >>> jt.nn.one_hot(jt.arange(5) % 3)
-            jt.Var([[1 0 0]
-                [0 1 0]
-                [0 0 1]
-                [1 0 0]
-                [0 1 0]], dtype=int32)
-        >>> jt.nn.one_hot(jt.arange(5) % 3, num_classes=5)
-            jt.Var([[1 0 0 0 0]
-                [0 1 0 0 0]
-                [0 0 1 0 0]
-                [1 0 0 0 0]
-                [0 1 0 0 0]], dtype=int32)
-        >>> jt.nn.one_hot(jt.arange(6).reshape(3,2) % 3)
-            jt.Var([[[1 0 0]
-                [0 1 0]]
-
-                [[0 0 1]
-                [1 0 0]]
-
-                [[0 1 0]
-                [0 0 1]]], dtype=int32)
-    '''
+    "\n返回输入的 one-hot 编码。如果 x 中的值大于 num_class 或小于0，返回的 one-hot 将全为零。\n\n    参数:\n        - x（jittor.Var）：输入的张量，元素类型为bool或者int\n        - num_classes（bool, 可选）：类总数。如果设为-1，那么类的数量将被推断为输入张量中最大的类值加一。默认值: -1\n\n    返回值:\n        jittor.Var: 其形状由输入维度加一得到。在最后一个维度的索引处该 Var 的值为1，其他处为0。\n\n    代码示例：\n        >>> jt.nn.one_hot(jt.arange(5) % 3)\n        jt.Var([[1 0 0]\n            [0 1 0]\n            [0 0 1]\n            [1 0 0]\n            [0 1 0]], dtype=int32)\n        >>> jt.nn.one_hot(jt.arange(5) % 3, num_classes=5)\n        jt.Var([[1 0 0 0 0]\n            [0 1 0 0 0]\n            [0 0 1 0 0]\n            [1 0 0 0 0]\n            [0 1 0 0 0]], dtype=int32)\n        >>> jt.nn.one_hot(jt.arange(6).reshape(3,2) % 3)\n        jt.Var([[[1 0 0]\n            [0 1 0]]\n            [[0 0 1]\n            [1 0 0]]\n            [[0 1 0]\n            [0 0 1]]], dtype=int32)\n\n"
 
     assert x.dtype in [jt.bool, jt.int8, jt.int16, jt.int32, jt.int64, jt.uint8, jt.uint16, jt.uint32, jt.uint64]
     if num_classes == -1:
@@ -3253,7 +3042,9 @@ reference: Mish - A Self Regularized Non-Monotonic Neural Activation Function.
         return x * jt.tanh(jt.softplus(x))
 
 def mish(x, inplace=False):
+    "\nmish函数是一个在神经网络中使用的激活函数，其定义为 :math:`x * tanh(softplus(x))` 。其中 :math:`softplus` 函数的定义为 :math:`softplus(x) = log(1 + e^x)`\n\n    参数:\n        - x（jittor.Var）：输入的张量\n        - inplace（bool, 可选）：用来决定是否在原位进行运算。当inplace=True时，函数会将结果直接保存在输入张量x上，这将节省存储空间但可能会改变输入的值。 默认值是False。当inplace=False时，函数将会创建一个新的张量来保存运算结果，并且不会影响输入张量x的值。\n\n    返回值:\n        jittor.Var: 一个与输入同形状、同数据类型的张量，代表运算的结果\n\n    代码示例：\n        >>> import jittor as jt\n        >>> from jittor import nn\n        >>> x = jt.array([1, 2, 3, 4, 5])\n        >>> y = jt.nn.functional.mish(x, inplace=False)\n        >>> y = jt.nn.mish(x, inplace=False)            \n        >>> y\n        jt.Var([0.86509836 1.9439589  2.986535   3.997413   4.9995522 ], dtype=float32)\n\n"
     return x * jt.tanh(jt.nn.softplus(x))
 
 def skip_init(module_cls, *args, **kw):
+    "\n跳过初始化模块类的函数。这个函数主要用来直接返回需要实例化的模块类，而不对其进行初始化，可用于在实例化模块类后进行特殊的初始化设置。\n\n    参数:\n        - module_cls（jittor.Var）：需要实例化的模块类\n        - \\*args（tuple）：传递给模块类实例化的非关键字参数\n        - \\*\\*kw （dict）：传递给模块类实例化的关键字参数\n\n    返回值:\n        jittor.Var: 模块类的实例\n\n    代码示例：\n        >>> nn.skip_init(nn.Linear, 20, 30)\n        # 等同于：\n        >>> nn.Linear(20, 30)\n\n"
     return module_cls(*args, **kw)

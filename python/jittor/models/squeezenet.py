@@ -81,15 +81,18 @@ class SqueezeNet(nn.Module):
         return jt.reshape(x, (x.shape[0], (- 1)))
 
 def _squeezenet(version, **kwargs):
+    "\n使用给定的版本和可选参数创建一个SqueezeNet模型\n\n    参数:\n        - `version` (str): SqueezeNet的版本，目前支持 '1_0' 和 '1_1'。\n        - `**kwargs`: 可选参数列表，用于指定模型的其他设置，如 `num_classes` 可以用于设定模型的输出类别数量。\n\n    返回值:\n        - 返回一个初始化的SqueezeNet模型实例。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models import _squeezenet\n        >>> model = _squeezenet('1_1')\n\n\n"
     model = SqueezeNet(version, **kwargs)
     return model
 
 def squeezenet1_0(pretrained=False, **kwargs):
+    "\n构建一个squeezenet1_0模型\n\n    Squeezenet源自论文[SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <0.5MB model size](https://arxiv.org/abs/1602.07360)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.squeezenet import *\n        >>> net = squeezenet1_0(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的squeezenet1_0模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = _squeezenet('1_0', **kwargs)
     if pretrained: model.load("jittorhub://squeezenet1_0.pkl")
     return model
 
 def squeezenet1_1(pretrained=False, **kwargs):
+    "\n构建一个squeezenet1_1模型\n\n    Squeezenet源自论文[SqueezeNet: AlexNet-level accuracy with 50x fewer parameters and <0.5MB model size](https://arxiv.org/abs/1602.07360)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.squeezenet import *\n        >>> net = squeezenet1_1(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的squeezenet1_1模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = _squeezenet('1_1', **kwargs)
     if pretrained: model.load("jittorhub://squeezenet1_1.pkl")
     return model

@@ -15,4 +15,5 @@ echo "[jittor path] $jittor_path"
 
 export PYTHONPATH=$jittor_path/python
 cd $bpath
-sphinx-autobuild -b html source build -H 0.0.0.0 -p 8890
+sphinx-autobuild -b html source build --port 8890
+

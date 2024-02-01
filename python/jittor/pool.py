@@ -186,6 +186,7 @@ class Pool(Module):
             return xx.reduce(self.op, [4,5])
 
 def _triple(x):
+    "\n    将输入 ``x`` 处理为一个三元组。\n    如果输入 ``x`` 是一个包含3个元素的元组，会原样返回。否则，会返回一个新的三元组，其三个元素都为 ``x`` 。\n\n    参数:\n        x (Any): 输入变量，可以为任意类型。\n\n    \n    代码示例:\n        >>> _triple(3) \n        (3, 3, 3)\n        >>>  _triple((1, 2, 3))\n        (1, 2, 3)\n\n    返回值:\n       返回一个三元组(tuple)。如果输入 ``x`` 已经是一个三元组，那么返回原输入。否则返回的三元组中的每个元素都为输入 ``x`` 。\n\n    \n"
     if isinstance(x, tuple):
         assert len(x) == 3
         return x
@@ -509,11 +510,13 @@ class AdaptiveMaxPool3d(Module):
         return xx.reduce("maximun", [5,6,7])
 
 def pool(x, kernel_size, op, padding=0, stride=None):
+    "    对输入的张量进行池化操作。此函数将对输入的张量 ``x`` 应用指定的池化操作，池化的方式由参数 ``op`` 指定。\n    数学表达式：\n    对于最大值池化，池化后的值为：\n    \n        y_{ij} = \\max_{m,n \\in [0,kernel\\_size)} x_{i+m, j+n}\n        \n    对于平均池化，池化后的值为：\n\n        y_{ij} = \\frac{1}{kernel\\_size^2} \\sum_{m,n \\in [0,kernel\\_size)} x_{i+m, j+n}\n    \n    参数：\n        - x (jt.Var): 输入的张量。\n        - kernel_size (int 或 tuple of int): 池化窗口的大小。 如果是一个整数，那么窗口将是一个方形，如果是一个元组，则元组的长度必须是2，分别代表窗口的高度和宽度。\n        - op (str): 池化方式， :math:`'max'` 表示最大值池化, :math:`'avg'` 表示平均池化。\n        - padding (int 或 tuple of int, 可选): 在输入的张量的各边填充0的宽度，默认值：0。如果是一个整数，那么所有边都填充同样的宽度，如果是一个元组，则元组的长度必须是2，分别代表高度和宽度方向的填充宽度。\n        - stride (int 或 tuple of int, 可选): 池化窗口移动的步长。默认值：None，即步长等于池化窗口的大小。\n\n    代码示例：\n        >>> import jittor as jt\n        >>> x = jt.ones((1,3,4,4))\n        >>> y = pool(x, (2, 2), 'max')\n        >>> y.shape\n        (1, 3, 2, 2)\n \n    返回值：\n        池化后的张量(Var)。\n\n\n"
     return Pool(kernel_size, stride, padding, op=op)(x)
 
 pool2d = pool
 
 def pool3d(x, kernel_size, op, padding=0, stride=None):
+    " 对3维输入进行池化操作。\n    .. math::\n        y_{d,h,w} = op\\{x_{s:t, s+m:t+m, s+n:t+n}\\}\n        \n    其中，:math:`s` 是在对应方向上的开始位置，:math:`t` 是结束位置，``op`` 是池化操作（可能是最大值或者平均值），:math:`m` 和:math:`n` 分别是 :math:`kernel` _ :math:`size` 在高和宽上的尺寸，:math:`s+m` 和 :math:`s+n` 分别是步长为 :math:`stride` 时滑动窗口的结束位置。\n\n    参数：\n        - x (jt.Var or jt.Module): 输入的3维张量。\n        - kernel_size (int or tuple of int): 池化窗口的尺寸。如果是单个整数，表示在所有方向上的窗口尺寸都是相同的。如果是一个长度为3的元组，则分别表示深度、高度和宽度上的窗口尺寸。\n        - op (str): 池化操作的类型。可以是 :math:`\"max\"` 表示最大值池化，或者是 :math:`\"avg\"` 表示平均值池化。\n        - padding (int or tuple of int, 可选): 输入的每一维在每个方向上的补0层数。默认值：0。如果是单个整数，表示在所有方向上的补0层数都是相同的。如果是一个长度为3的元组，则分别表示深度、高度和宽度上的补0层数。\n        - stride (int or tuple of int, 可选): 池化窗口的步长。默认值：等于 :math:`kernel` _ :math:`size` 。如果是单个整数，表示在所有方向上的步长都是相同的。如果是一个长度为3的元组，则分别表示深度、高度和宽度上的步长。 \n\n    代码示例：\n        >>> import jittor as jt\n        >>> x = jt.random([2,3,10,10,10])\n        >>> y = jt.nn.pool3d(x, 2, 'max')\n        >>> y.shape \n        [2,3,5,5,5]\n\n    返回值：\n        池化后的输出(Var)。\n\n\n    \n"
     return Pool3d(kernel_size, stride, padding, op=op)(x)
 
 class AvgPool2d(Module):
@@ -531,6 +534,7 @@ class AvgPool3d(Module):
         return self.layer(x)
 
 def avg_pool2d(x, kernel_size, stride=None, padding=0, ceil_mode=False, count_include_pad=True):
+    "    \n    这是一个二维平均池化函数。该函数将给定输入进行二维平均池化操作。\n\n     .. math::\n    \n        H_{out}=\\left\\lfloor \\frac{{H_{in} + 2 \\cdot \\text{{padding}} - \\text{{kernel_size}}}}{\\text{{stride}}} \\right\\rfloor + 1\n\n        W_{out} = \\left\\lfloor \\frac{{W_{in} + 2 \\cdot \\text{{padding}} - \\text{{kernel_size}}}}{\\text{{stride}}} \\right\\rfloor + 1\n\n    参数：\n       - x(jt.Var)：输入张量，输入的维度应为四维 :math:`(Batch Size， Channel， Height， Width)` 。\n       - kernel_size (int or tuple)：池化核的大小，如果是一个单独的整数，则长度和宽度都将为该值。若为元组则将按照给定的值作为高和宽。\n       - stride(int or tuple, optional)：步长，该值决定了滑动窗口滑过输入张量的步幅。默认步长等于核大小。如果是一个单独的整数，则长度和宽度都将为该值。若为元组则将按照给定的值作为高和宽。\n       - padding(int, optional)：在输入张量的所有边界上隐式零填充。默认值：0。\n       - ceil_mode(bool, optional)：当设置为True时，会使用 :math:`ceil` 函数计算输出形状。默认值：False。\n       - count_include_pad(bool, optional)：当设置为True时，将在计算平均值时包含零填充。默认值：True。\n   \n     代码示例:\n        >>> import jittor as jt\n        >>> x = jt.random((1, 1, 4, 4))\n        >>> jt.nn.avg_pool2d(x, kernel_size=2, stride=2)\n    返回值：\n        返回张量，其形状取决于输入和平均池化操作。如果输入的形状是 :math:`(N, C, H_{in}, W_{in})` ，那么在默认 :math:`stride` （即kernel size）下，输出的形状将是 :math:`(N, C, H_{out}, W_{out})` ，其中\n \n\n"
     return AvgPool2d(kernel_size, stride, padding, ceil_mode, count_include_pad)(x)
 
 class MaxPool2d(Module):
@@ -548,10 +552,12 @@ class MaxPool3d(Module):
         return self._layer(x)
 
 def max_pool2d(x, kernel_size, stride=None, padding=0, dilation=None, return_indices=None, ceil_mode=False):
+    "    对输入的多通道二维输入数据进行最大池化计算。\n\n    参数:\n        - x (Tensor): 输入张量，形状为 :math:`(N,C,H,W)` ，其中 :math:`N` 是批大小， :math:`C` 是通道数， :math:`H` 和 :math:`W` 是输入图片的高和宽。\n        - kernel_size (int 或 tuple(int)): 池化窗口的大小。当给出的是一个整数时，池化窗口的高和宽为同一值。也可以直接以 :math:`(H, W)` 的形式给出。\n        - stride (int 或 tuple(int), optional): 池化操作的步长。当给出的是一个整数时，步长在高和宽方向分别为该值。也可以直接以 :math:`(SH, SW)` 的形式给出。如果未给出，默认值 :math:`kernel_size` 。\n        - padding (int 或 tuple(int), optional): 在输入的边界外扩展0值的填充大小。当给出的是一个整数时，填充在高和宽方向分别为该值。也可以直接以 :math:`(PH, PW)` 的形式给出。默认值：0。\n        - dilation (int 或 tuple(int), optional): 窗口内元素之间的间距。当给出的是一个整数时，间距在高和宽方向分别为该值。也可以直接以 :math:`(DH, DW)` 的形式给出。如果未给出，默认值：1。\n        - return_indices (bool， optional): 如果为True，则返回输出最大值的索引; 默认值：None。\n        - ceil_mode (bool， optional): 如果为True，使用 :math:`ceil` 代替 :math:`floor` 计算输出 :math:`shape` 。默认值：False。\n\n    返回:\n        最大池化后的结果(Tensor)。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> x = jt.random((1, 1, 4, 4))\n        >>> jt.nn.max_pool2d(x, kernel_size=2, stride=2)\n       \n"
     return MaxPool2d(kernel_size, stride, padding, dilation, return_indices, ceil_mode)(x)
 
 
 def max_pool3d(x, kernel_size, stride=None, padding=0, dilation=None, return_indices=None, ceil_mode=False):
+    "\n对输入张量进行3D最大池化操作。\n\n    对于一个输入张量的形状为 :math:`(N, C, D, H, W)` ，则输出张量的形状计算公式为： \n\n    .. math::\n\n        \\left\\lfloor \\frac{{\\text{input_length} + 2 \\cdot \\text{padding} - \\text{kernel_size}}}{\\text{stride}} \\right\\rfloor + 1\n\n    参数：\n        - x(Var): 输入的张量。 \n        - kernel_size(int or tuple): 池化核大小。\n        - stride(int or tuple, optional): 池化操作步长。默认值： None\n        - padding(int or tuple, optional): 输入的每一条边补充0的层数。默认值：0\n        - dilation( int or tuple, optional): 控制池化窗口中元素步幅，可以是单个整数或（深度，高度，宽度）的元组。默认值： None\n        - return_indices(bool, optional): 是否返回池化结果对应的输入索引，有些情况下用于计算梯度。默认值： None\n        - ceil_mode(bool, optional): 是否使用 :math:`ceil` 函数计算输出大小。如果为 False，则使用 :math:`floor` 函数。默认值： False\n\n    代码示例：\n        >>> import torch\n        >>> x = torch.randn(1, 1, 4, 4, 4)  # 输入张量的形状为 [batch_size, channels, depth, height, width]\n        >>> torch.nn.functional.max_pool3d(x, kernel_size=3, stride=2, padding=1)\n    \n返回值：\n        3D最大池化操作后的输出张量(jt.Var)\n\n\n"
     return MaxPool3d(kernel_size, stride, padding, dilation, return_indices, ceil_mode)(x)
 
 class MaxUnpool2d(Module):

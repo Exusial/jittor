@@ -95,6 +95,7 @@ class MobileNetV2(nn.Module):
         return self._forward_impl(x)
 
 def mobilenet_v2(pretrained=False):
+    "\n构建一个mobilenet_v2模型\n\n    mobilenet_v2源自于论文[Inverted Residuals and Linear Bottlenecks: Mobile Networks for Classification, Detection and Segmentation](https://arxiv.org/abs/1801.04381)，是一个轻量级的模型，适合在移动端部署。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.mobilenet import *\n        >>> net = mobilenet_v2(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的mobilenet_v2模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = MobileNetV2()
     if pretrained: model.load("jittorhub://mobilenet_v2.pkl")
     return model

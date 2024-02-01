@@ -92,21 +92,25 @@ class MNASNet(nn.Module):
         return self.classifier(x)
 
 def mnasnet0_5(pretrained=False, **kwargs):
+    "\n构建一个mnasnet0_5模型\n\n    MnasNet源自于论文[MnasNet: Platform-Aware Neural Architecture Search for Mobile](https://arxiv.org/abs/1807.11626)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.mnasnet import *\n        >>> net = mnasnet0_5(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的mnasnet0_5模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = MNASNet(0.5, **kwargs)
     if pretrained: model.load("jittorhub://mnasnet0_5.pkl")
     return model
 
 def mnasnet0_75(pretrained=False, **kwargs):
+    "\n构建一个mnasnet0_75模型\n\n    MnasNet源自于论文[MnasNet: Platform-Aware Neural Architecture Search for Mobile](https://arxiv.org/abs/1807.11626)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.mnasnet import *\n        >>> net = mnasnet0_75(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的mnasnet0_75模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = MNASNet(0.75, **kwargs)
     if pretrained: model.load("jittorhub://mnasnet0_75.pkl")
     return model
 
 def mnasnet1_0(pretrained=False, **kwargs):
+    "\n构建一个mnasnet1_0模型\n\n    MnasNet源自于论文[MnasNet: Platform-Aware Neural Architecture Search for Mobile](https://arxiv.org/abs/1807.11626)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.mnasnet import *\n        >>> net = mnasnet1_0(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的mnasnet1_0模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = MNASNet(1.0, **kwargs)
     if pretrained: model.load("jittorhub://mnasnet1_0.pkl")
     return model
 
 def mnasnet1_3(pretrained=False, **kwargs):
+    "\n构建一个mnasnet1_3模型\n\n    MnasNet源自于论文[MnasNet: Platform-Aware Neural Architecture Search for Mobile](https://arxiv.org/abs/1807.11626)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n        - `kwargs`: 其他可选参数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.mnasnet import *\n        >>> net = mnasnet1_3(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的mnasnet1_3模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     model = MNASNet(1.3, **kwargs)
     if pretrained: model.load("jittorhub://mnasnet1_3.pkl")
     return model

@@ -347,6 +347,7 @@ def single_process_scope(rank=0):
     """
     def outer(func):
         def inner(*args, **kw):
+            "\n    这个函数接收任意数量的位置参数和关键字参数，并将他们传递给自身作为函数调用。\n\n    参数：\n      \\*args (任意类型) : 任意数量的位置参数\n      \n      \\**kw (任意类型) : 任意数量的关键字参数\n\n    返回：\n    如果函数执行成功，返回函数的结果。否则，将返回None。\n\n"
             ret = None
             sync_all()
             with __single_process_scope(rank) as flag:
@@ -485,6 +486,7 @@ def ones(*shape, dtype="float32"):
     return unary(1, dtype).broadcast(shape)
 
 def new_ones(x, size):
+    "\n返回一个全为1的张量(Var)，形状和元素类型与输入张量 ``x`` 定义保持一致。\n\n    参数：\n        - x (Var): Var类型的张量\n        \n    代码示例：\n        >>> jt.array([1, 2, 3]).float()\n        jt.Var([1. 2. 3.], dtype=float32)\n        >>> jt.new_ones(x, (5,))\n        jt.Var([1. 1. 1. 1. 1.], dtype=float32)\n        \n    返回值：\n        全为1的张量(Var)且 ``dtype`` 和 ``x`` 保持一致\n\n"
     return ones(size, x.dtype)
 Var.new_ones = new_ones
 
@@ -516,6 +518,7 @@ def zeros(*shape, dtype="float32"):
     return unary(0, dtype).broadcast(shape)
 
 def new_zeros(x, size):
+    "\n返回一个全为0的张量(Var)，数据类型由张量 ``x`` 定义，形状由可变参数 ``size`` 定义。\n\n    参数：\n        - x (Var): Var类型的张量\n        - size (int...): 整数序列，定义了输出的形状\n        \n    代码示例：\n        >>> jt.array([1, 2, 3]).float()\n        jt.Var([1. 2. 3.], dtype=float32)\n        >>> jt.new_zeros(x, (5,))\n        jt.Var([0. 0. 0. 0. 0.], dtype=float32)\n        \n    返回值：\n        全为0的张量(Var)且数据类型 ``dtype`` 和输入张量 ``x`` 保持一致\n\n"
     return zeros(size, x.dtype)
 Var.new_zeros = new_zeros
 
@@ -528,6 +531,7 @@ def empty(*shape, dtype="float32"):
     return ops.empty(shape, dtype)
 
 def new_empty(x, size):
+    "\n返回一个用未初始化数据填充的张量(Var)，形状和元素类型与输入张量 ``x`` 定义保持一致。\n\n    参数：\n        x (Var): Var类型的张量\n        size (int...): 整数序列，定义了输出的形状\n        \n    代码示例：\n        >>> jt.array([1, 2, 3]).float()\n        jt.Var([1. 2. 3.], dtype=float32)\n        >>> jt.new_empty(x, (5,))\n        jt.Var([0. 0. 0. 0. 0.], dtype=float32)\n        \n    返回值：\n        返回一个用初始化数据填充的张量(Var)且数据类型 ``dtype`` 和输入张量 ``x`` 保持一致\n\n\n"
     return empty(size, x.dtype)
 Var.new_empty = new_empty
 
@@ -548,10 +552,12 @@ def full(shape,val,dtype="float32"):
     return unary(val, dtype).broadcast(shape)
 
 def new_full(x, size, val):
+    "\n创建一个张量(Var)，其中张量的形状由可变参数 ``shape`` 定义，张量中的各个标量的值由可变参数 ``val`` 定义，数据类型由张量 ``x`` 的数据类型定义。\n    参数：\n        - x (Var): Var类型的张量\n        - size(int...): 整数序列，定义了输出张量的形状\n        - val: 填充值，任意数值类型\n        \n    代码示例：\n        >>> jt.array([1, 2, 3]).float()\n        jt.Var([1. 2. 3.], dtype=float32)\n        >>> jt.new_full(x, (3,2), 3)\n        jt.Var([[3. 3.]\n                [3. 3.]\n                [3. 3.]], dtype=float32)\n        \n    返回值：\n        返回一个填充值为 ``val`` ，形状大小为 ``size`` 的张量(Var)\n\n"
     return full(size, val, x.dtype)
 Var.new_full = new_full
 
 def ne(x,y):
+    "将两个输入进行比较并返回结果。如果 ``x`` 与 ``y`` 不相等，返回True；否则返回False。\n    ``x`` 和 ``y`` 必须是可以被广播为相同形状的数组，满足以下条件的数组可以执行广播操作。\n        - 相同形状的数组可以进行广播。\n        - 任何维度为1的数组都可以广播。\n        - 在某个维度上大小不匹配的数组不能广播，除非其中一个数组在该维度的大小为1。\n\n    参数：\n        - x(int, float, list, numpy.array):输入的第一个数值，可以是数字、列表或者 :math:`numpy` 数组\n        - y(int, float, list, numpy.array): 输入的第二个数值，可以是数字、列表或者 :math:`numpy` 数组。注意 ``y`` 必须与 ``x`` 相同的维度和大小\n \n    代码示例：\n        >>> x = [1, 2, 3]\n        >>> y = [1, 2, 4]\n        >>> ne(x, y)\n        array([False, False, True])   \n\n    返回值：\n        与 ``x`` 和 ``y`` 相同形状和维度的布尔值数组，其中的元素表示 ``x`` 和 ``y`` 对应位置元素的不相等性。如果 ``x`` != ``y`` , 结果为True，否则为False\n\n\n"
     return x!=y 
 Var.ne = ne 
 

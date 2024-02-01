@@ -17,6 +17,7 @@ from jittor import lgamma, igamma
 from jittor.math_util.gamma import gamma_grad, sample_gamma
 
 def simple_presum(x):
+    "     对输入的 ``data`` 进行简单的前缀和计算。公式如下：\n\n    .. math::\n        y[i_0, ..., i_{n-1}, j] = \\sum_{k=0}^{j} x[i_0, ..., i_{n-1}, k]\n\n    其中， :math:`n` 为 :math:`x` 的维度数。\n\n    参数:\n        - x (Var): 输入的 ``data`` ，可以是任意维度。\n\n    代码示例：\n        >>> jt.flags.use_cuda = 1\n        >>> x = jt.array([1.0, 2.0, 3.0, 4.0])\n        >>> print(simple_presum(x))\n        jt.Var([0. 1. 3. 6. 10.])\n\n    返回值:\n        :math:`x` 的 ``shape`` 向后扩展一位的结果，数据类型与 :math:`x` 相同\n    "
     src = '''
 __inline_static__
 @python.jittor.auto_parallel(1)
@@ -173,6 +174,7 @@ class GammaDistribution:
 
 
 def kl_divergence(cur_dist, old_dist):
+    "     计算两个概率分布之间的 ``KL`` 散度。 ``KL`` 散度，也称为 ``Kullback-Leibler`` 散度，是一种测量两个概率分布之间差异的方法。如果两个分布完全相同，则 ``KL`` 散度为0。请注意， ``KL`` 散度不是对称的，也就是说， ``KL`` 散度( ``cur_dist`` , ``old_dist`` )并不等于 ``KL`` 散度( ``old_dist`` , ``cur_dist`` )。数学公式:\n\n    对于 ``Normal`` 分布， ``KL`` 散度为\n\n    .. math::\n        $0.5 * \\left(\\frac{\\sigma_{cur}^2}{\\sigma_{old}^2} + \\left(\\frac{\\mu_{cur} - \\mu_{old}}{\\sigma_{old}}\\right)^2 - 1 - \\log\\left(\\frac{\\sigma_{cur}^2}{\\sigma_{old}^2}\\right)\\right)$\n    \n    对于 ``Categorical`` 或 ``OneHotCategorical`` 分布， ``KL`` 散度是\n\n    .. math::\n        $prob_{cur}*(logits_{cur}-logits_{old})$\n    \n    对于 ``Uniform`` 分布，如果满足条件 ``old_dist.low``  >  ``cur_dist.low`` or  ``old_dist.high`` < ``cur_dist.high`` ，则结果为正无穷，否则为\n\n    .. math::\n        $log\\left(\\frac{old\\_high - old\\_low}{cur\\_high - cur_low}\\right)$\n    \n    对于 ``Geometric`` 分布,  ``KL`` 散度为\n\n    .. math::\n        $-entropy_{cur} - \\log(1-prob_{old})/prob_{cur} - logits_{old}\n\n    参数:\n        - cur_dist (Distribution类型): 当前的概率分布。必须是 ``Normal`` ,  ``Categorical`` ,  ``OneHotCategorical`` ,  ``Uniform`` 或 ``Geometric`` 的一个实例。\n        - old_dist(Distribution类型): 用于比较的旧概率分布。必须是与 ``cur_dist`` 同类型的实例。\n\n    返回值:\n        根据提供的分布类型返回两分布间的 ``KL`` 散度。\n    \n"
     assert isinstance(cur_dist, type(old_dist))
     if isinstance(cur_dist, Normal):
         vr = (cur_dist.sigma / old_dist.sigma)**2

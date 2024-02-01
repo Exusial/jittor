@@ -152,22 +152,26 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 def _resnet(block, layers, **kwargs):
+    "\n该函数用于创建一个ResNet模型\n\n    ResNet模型通过添加shortcut来改善梯度回传，允许更深层次的网络有效训练。主要特点是添加了shortcut连接，使得输入直接与输出相连。\n\n    .. math::\n        y = F(x, {W_i}) + x\n\n    其中 :math:`F(x, { W_i })` 是block，:math:`x` 是输入。这种设计使得网络能够包含更多层，从而提升性能。\n\n    参数:\n        - `block` (nn.Module): ResNet的基本模块。\n        - `layers` (List[int]): 表示ResNet中不同层的层数，例如 `[2, 2, 2, 2]` 表示的就是ResNet18。\n        - `**kwargs`: 可变参数，这些参数将直接传给 `ResNet` 模型的构造函数。\n\n    返回值:\n        - 返回构建的ResNet模型实例。\n\n    代码示例:\n        >>> model = _resnet(Bottleneck, [3, 4, 6, 3], stride=1, pretrained=False)\n\n\n"
     model = ResNet(block, layers, **kwargs)
     return model
 
 def Resnet18(pretrained=False, **kwargs):
+    "\n构建Resnet18模型\n\n    ResNet18模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet18模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet18模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Resnet18(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet18模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet18模型。\n\n\n"
     model = _resnet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained: model.load("jittorhub://resnet18.pkl")
     return model
 resnet18 = Resnet18
 
 def Resnet34(pretrained=False, **kwargs):
+    "\n构建Resnet34模型\n\n    ResNet34模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet34模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet34模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Resnet34(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet34模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet34模型。\n\n\n"
     model = _resnet(BasicBlock, [3, 4, 6, 3], **kwargs)
     if pretrained: model.load("jittorhub://resnet34.pkl")
     return model
 resnet34 = Resnet34
 
 def Resnet50(pretrained=False, **kwargs):
+    "\n构建Resnet50模型\n\n    ResNet50模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet50模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet50模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Resnet50(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet50模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet50模型。\n\n\n"
     model = _resnet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained: model.load("jittorhub://resnet50.pkl")
     return model
@@ -175,40 +179,35 @@ def Resnet50(pretrained=False, **kwargs):
 resnet50 = Resnet50
 
 def Resnet38(pretrained=False, **kwargs):
+    "\n构建ResNet38模型\n\n    ResNet38模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet38模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet38模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = ResNet38(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet38模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet38模型。\n\n\n"
     model = _resnet(Bottleneck, [2, 3, 5, 2], **kwargs)
     if pretrained: model.load("jittorhub://resnet38.pkl")
     return model
 resnet38 = Resnet38
 
 def Resnet26(pretrained=False, **kwargs):
+    "\n构建ResNet26模型\n\n    ResNet26模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet26模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet26模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = ResNet26(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet26模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet26模型。\n\n\n"
     model = _resnet(Bottleneck, [1, 2, 4, 1], **kwargs)
     if pretrained: model.load("jittorhub://resnet26.pkl")
     return model
 resnet26 = Resnet26
 
 def Resnet101(pretrained=False, **kwargs):
-    """
-    ResNet-101 model architecture.
-
-    Example::
-
-        model = jittor.models.Resnet101()
-        x = jittor.random([10,3,224,224])
-        y = model(x) # [10, 1000]
-
-    """
+    "\n构建ResNet101模型\n\n    ResNet101模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet101模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet101模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = ResNet101(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet101模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet101模型。\n\n\n"
     model = _resnet(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained: model.load("jittorhub://resnet101.pkl")
     return model
 resnet101 = Resnet101
 
 def Resnet152(pretrained=False, **kwargs):
+    "\n构建ResNet152模型\n\n    ResNet152模型基于论文 [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)。\n\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的ResNet152模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的ResNet152模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_resnet` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = ResNet152(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n\n    返回值:\n        - 返回一个ResNet152模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的ResNet152模型。\n\n\n"
     model = _resnet(Bottleneck, [3, 8, 36, 3], **kwargs)
     if pretrained: model.load("jittorhub://resnet152.pkl")
     return model
 resnet152 = Resnet152
 
 def Resnext50_32x4d(pretrained=False, **kwargs):
+    "\n构建一个Resnext50_32x4d模型\n\n    Resnext源自[Aggregated Residual Transformations for Deep Neural Networks](https://arxiv.org/abs/1611.05431)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Resnext50_32x4d(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的Resnext50_32x4d模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 4
     model = _resnet(Bottleneck, [3, 4, 6, 3], **kwargs)
@@ -217,6 +216,7 @@ def Resnext50_32x4d(pretrained=False, **kwargs):
 resnext50_32x4d = Resnext50_32x4d
 
 def Resnext101_32x8d(pretrained=False, **kwargs):
+    "\n构建一个Resnext101_32x8d模型\n\n    Resnext源自[Aggregated Residual Transformations for Deep Neural Networks](https://arxiv.org/abs/1611.05431)。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Resnext101_32x8d(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的Resnext101_32x8d模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 8
     model = _resnet(Bottleneck, [3, 4, 23, 3], **kwargs)
@@ -225,6 +225,7 @@ def Resnext101_32x8d(pretrained=False, **kwargs):
 resnext101_32x8d = Resnext101_32x8d
 
 def Wide_resnet50_2(pretrained=False, **kwargs):
+    "\n构建一个Wide_resnet50_2模型\n\n    Wide_resnet源自于论文[Wide Residual Networks](https://arxiv.org/abs/1605.07146)，是Resnet的一个变种，其主要改进是增加了网络的宽度，即增加了每层的通道数，从而提高了网络的性能。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Wide_resnet50_2(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的Wide_resnet50_2模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     kwargs['width_per_group'] = (64 * 2)
     model = _resnet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained: model.load("jittorhub://wide_resnet50_2.pkl")
@@ -232,6 +233,7 @@ def Wide_resnet50_2(pretrained=False, **kwargs):
 wide_resnet50_2 = Wide_resnet50_2
 
 def Wide_resnet101_2(pretrained=False, **kwargs):
+    "\n构建一个Wide_resnet101_2模型\n\n    Wide_resnet源自于论文[Wide Residual Networks](https://arxiv.org/abs/1605.07146)，是Resnet的一个变种，其主要改进是增加了网络的宽度，即增加了每层的通道数，从而提高了网络的性能。\n\n    参数:\n        - `pretrained` (bool, 可选): 表示是否预加载预训练模型。默认为 `False`。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.resnet import *\n        >>> net = Wide_resnet101_2(pretrained=False)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1, 1000]\n   \n    返回值:\n        - 返回构建好的Wide_resnet101_2模型实例。如果 `pretrained` 为 `True`，则返回在ImageNet上预训练的模型。\n\n\n"
     kwargs['width_per_group'] = (64 * 2)
     model = _resnet(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained: model.load("jittorhub://wide_resnet101_2.pkl")

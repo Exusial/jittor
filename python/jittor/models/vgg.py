@@ -64,53 +64,62 @@ cfgs = {
 
 
 def _vgg(arch, cfg, batch_norm, **kwargs):
+    "\n用于创建一个VGG模型\n    参数：\n        - arch (str): 模型的架构，如 'vgg16' 或 'vgg19'。\n        - cfg (str)，模型的配置，表明每个卷积块中的卷积层的数量\n        - batch_norm (bool)，是否在每个卷积层之后使用批量规范化层。默认为False。\n        \n    代码示例：\n        >>> model = _vgg('vgg11', 'A', False)\n        \n    返回值：\n        返回由输入参数定义的VGG模型。\n"
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     return model
 
 
 def vgg11(pretrained=False, **kwargs):
+    "\n构建并返回VGG11模型\n\n    VGG11来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG11模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG11模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg11(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG11模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG11模型。\n\n"
     model = _vgg('vgg11', 'A', False, **kwargs)
     if pretrained: model.load("jittorhub://vgg11.pkl")
     return model
 
 
 def vgg11_bn(pretrained=False, **kwargs):
+    "\n使用带有批量归一化的VGG11模型进行网络构建\n\n    VGG11_BN来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n    \n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG11模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG11模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg11_bn(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG11_BN模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG11_BN模型。\n\n"
     model = _vgg('vgg11_bn', 'A', True, **kwargs)
     if pretrained: model.load("jittorhub://vgg11_bn.pkl")
     return model
 
 
 def vgg13(pretrained=False, **kwargs):
+    "\n构建并返回VGG13模型\n\n    VGG13来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG13模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG13模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg13(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG13模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG13模型。\n\n"
     model = _vgg('vgg13', 'B', False, **kwargs)
     if pretrained: model.load("jittorhub://vgg13.pkl")
     return model
 
 
 def vgg13_bn(pretrained=False, **kwargs):
+    "\n使用带有批量归一化的VGG13模型进行网络构建\n\n    VGG13_BN来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n    \n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG13模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG13模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg13_bn(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG13_BN模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG13_BN模型。\n\n"
     model = _vgg('vgg13_bn', 'B', True, **kwargs)
     if pretrained: model.load("jittorhub://vgg13_bn.pkl")
     return model
 
 
 def vgg16(pretrained=False, **kwargs):
+    "\n构建并返回VGG16模型\n\n    VGG16来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG16模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG16模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg16(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG16模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG16模型。\n\n"
     model = _vgg('vgg16', 'D', False, **kwargs)
     if pretrained: model.load("jittorhub://vgg16.pkl")
     return model
 
 
 def vgg16_bn(pretrained=False, **kwargs):
+    "\n使用带有批量归一化的VGG16模型进行网络构建\n\n    VGG16_BN来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n    \n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG16模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG16模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg16_bn(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG16_BN模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG16_BN模型。\n\n\n"
     model = _vgg('vgg16_bn', 'D', True, **kwargs)
     if pretrained: model.load("jittorhub://vgg16_bn.pkl")
     return model
 
 
 def vgg19(pretrained=False, **kwargs):
+    "\n构建并返回VGG19模型\n\n    VGG19来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n\n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG19模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG19模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg19(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG19模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG19模型。\n\n"
     model = _vgg('vgg19', 'E', False, **kwargs)
     if pretrained: model.load("jittorhub://vgg19.pkl")
     return model
 
 
 def vgg19_bn(pretrained=False, **kwargs):
+    "\n使用带有批量归一化的VGG19模型进行网络构建\n\n    VGG19_BN来自于[Very Deep Convolutional Networks for Large-Scale Image Recognition.](https://arxiv.org/abs/1409.1556)\n    该函数允许用户选择是否加载预训练的模型，通过 `pretrained` 参数控制。此外，用户可以通过 `**kwargs` 传递额外的参数，这些参数将直接传递给底层的 `_vgg` 函数。\n    \n    参数:\n        - `pretrained` (bool): 表示是否加载预训练的VGG19模型。默认为 `False`。如果设为 `True`，函数会自动下载并加载预训练的VGG19模型。\n        - `**kwargs`: 可变参数，允许用户传递额外的、自定义的参数给 `_vgg` 函数。\n\n    代码示例:\n        >>> import jittor as jt\n        >>> from jittor.models.vgg import *\n        >>> net = vgg19_bn(pretrained=True)\n        >>> x = jt.rand(1, 3, 224, 224)\n        >>> y = net(x)\n        >>> y.shape\n        [1,1000,]\n\n    返回值:\n        - 返回一个VGG19_BN模型实例。如果 `pretrained=True`，则返回的模型将加载预训练权重；否则，返回一个未经训练的VGG19_BN模型。\n\n\n"
     model = _vgg('vgg19_bn', 'E', True, **kwargs)
     if pretrained: model.load("jittorhub://vgg19_bn.pkl")
     return model

@@ -617,15 +617,7 @@ Example::
                     yield batch_data
 
 def DataLoader(dataset: Dataset, *args, **kargs):
-    """ Simple dataloader.
-    
-    Example::
-
-        train_dir = './data/celebA_train'
-        train_dataset = ImageFolder(train_dir)
-        dataloader = jt.dataset.DataLoader(train_dataset, batch_size=8)
-
-    """
+    "\n    将一个数据集封装成一个数据加载器。\n\n    参数：\n        - dataset(Dataset): 需要进行封装的数据集。\n        - args: 数据集属性设置的可变位置参数。\n        - kargs: 数据集属性设置的可变关键字参数，使用字典的形式传递参数值。\n\n    返回值：\n        执行 :math:`set` _ :math:`attrs` 操作后的封装好的数据加载器( :math:`DataLoader` )。\n   \n    代码示例：\n        >>> train_dir = './data/celebA_train'\n        >>> train_dataset = ImageFolder(train_dir)\n        >>> dataloader = jt.dataset.DataLoader(train_dataset, batch_size=8)\n   \n    \n\n\n"
     return dataset.set_attrs(*args, **kargs)
 
 class ImageFolder(Dataset):
